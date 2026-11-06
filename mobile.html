@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Railway Terminal Detention — Mobile (Windows 98)</title>
+  <style>
+    /* ============================================================
+       WINDOWS 98 AUTHENTIC MOBILE SYSTEM THEME
+       ============================================================ */
+    :root {
+      --win-bg: #008080; /* Classic Win98 Teal */
+      --win-gray: #c0c0c0;
+      --win-light: #ffffff;
+      --win-dark: #808080;
+      --win-black: #000000;
+      --win-blue-1: #000080;
+      --win-blue-2: #1084d0;
+      --win-highlight: #0a64dc;
+      --win-font: 'Segoe UI', Tahoma, 'MS Sans Serif', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: rgba(0,0,0,0);
+    }
+
+    body {
+      background-color: var(--win-bg);
+      font-family: var(--win-font);
+      color: var(--win-black);
+      padding: 8px 6px 40px 6px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    /* 3D Border Mixins */
+    .win-window {
+      background: var(--win-gray);
+      border: 2px solid;
+      border-color: #dfdfdf #000000 #000000 #dfdfdf;
+      box-shadow: 1px 1px 0 #000000;
+      margin-bottom: 12px;
+    }
+
+    .win-inset {
+      border: 2px solid;
+      border-color: #808080 #dfdfdf #dfdfdf #808080;
+      background: #ffffff;
+    }
+
+    .win-outset {
+      border: 2px solid;
+      border-color: #dfdfdf #808080 #808080 #dfdfdf;
+      background: var(--win-gray);
+    }
+
+    /* Title Bar */
+    .title-bar {
+      background: linear-gradient(90deg, var(--win-blue-1), var(--win-blue-2));
+      color: #ffffff;
+      padding: 4px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 13px;
+      user-select: none;
+    }
+
+    .title-bar-text {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    .title-bar-controls {
+      display: flex;
+      gap: 3px;
+    }
+
+    .title-btn {
+      width: 18px;
+      height: 16px;
+      background: var(--win-gray);
+      border: 1px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      font-size: 10px;
+      font-weight: bold;
+      line-height: 12px;
+      text-align: center;
+      color: #000000;
+      cursor: pointer;
+    }
+
+    /* Tab Controls */
+    .tabs-nav {
+      display: flex;
+      background: var(--win-gray);
+      padding: 6px 6px 0 6px;
+      gap: 3px;
+      border-bottom: 2px solid #808080;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 13px;
+      font-weight: bold;
+      font-family: var(--win-font);
+      background: #b5b5b5;
+      border: 2px solid;
+      border-color: #ffffff #808080 transparent #ffffff;
+      border-bottom: none;
+      cursor: pointer;
+      text-align: center;
+      outline: none;
+      color: #222222;
+    }
+
+    .tab-button.active {
+      background: var(--win-gray);
+      position: relative;
+      margin-bottom: -2px;
+      padding-top: 9px;
+      padding-bottom: 9px;
+      border-bottom: 2px solid var(--win-gray);
+      color: #000000;
+    }
+
+    /* Main Container Inside Window */
+    .window-body {
+      padding: 10px 8px;
+      background: var(--win-gray);
+    }
+
+    /* Status Bar */
+    .status-bar {
+      margin-top: 8px;
+      padding: 3px 6px;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      color: #333333;
+      background: var(--win-gray);
+    }
+
+    /* Buttons */
+    .win-btn {
+      font-family: var(--win-font);
+      font-size: 13px;
+      font-weight: bold;
+      padding: 7px 12px;
+      background: var(--win-gray);
+      border: 2px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      cursor: pointer;
+      outline: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      user-select: none;
+      min-height: 36px;
+    }
+
+    .win-btn:active {
+      border-color: #808080 #ffffff #ffffff #808080;
+      padding: 8px 11px 6px 13px;
+    }
+
+    .win-btn-primary {
+      background: #0a64dc;
+      color: #ffffff;
+      border-color: #6ba6f7 #003780 #003780 #6ba6f7;
+    }
+
+    .win-btn-primary:active {
+      border-color: #003780 #6ba6f7 #6ba6f7 #003780;
+    }
+
+    .win-btn-danger {
+      background: #c00000;
+      color: #ffffff;
+      border-color: #ff8080 #600000 #600000 #ff8080;
+    }
+
+    /* Fieldsets / Groupboxes */
+    fieldset {
+      border: 2px solid;
+      border-color: #dfdfdf #808080 #808080 #dfdfdf;
+      padding: 10px 8px;
+      margin-bottom: 10px;
+      background: var(--win-gray);
+    }
+
+    legend {
+      padding: 0 4px;
+      font-weight: bold;
+      font-size: 12px;
+      color: #000080;
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 8px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 3px;
+      color: #222222;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      height: 34px;
+      padding: 4px 8px;
+      font-family: var(--win-font);
+      font-size: 13px;
+      background: #ffffff;
+      border: 2px solid;
+      border-color: #808080 #dfdfdf #dfdfdf #808080;
+      outline: none;
+      color: #000000;
+    }
+
+    .form-textarea {
+      height: 60px;
+      resize: vertical;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: 1px dotted #000000;
+    }
+
+    /* Date-Time Picker Row */
+    .dt-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .dt-row input[type="text"] {
+      flex: 1;
+    }
+
+    .dt-row input[type="datetime-local"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+      height: 0;
+    }
+
+    .dt-pick-btn {
+      padding: 0 8px;
+      height: 34px;
+      min-height: 34px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* Radio Group */
+    .radio-bar {
+      display: flex;
+      gap: 14px;
+      padding: 6px 8px;
+      background: #dfdfdf;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      margin-bottom: 10px;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Table / List View */
+    .table-container {
+      max-height: 420px;
+      overflow-y: auto;
+      overflow-x: auto;
+      background: #ffffff;
+      border: 2px solid;
+      border-color: #808080 #dfdfdf #dfdfdf #808080;
+      margin-bottom: 10px;
+    }
+
+    table.win-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    table.win-table th {
+      background: var(--win-gray);
+      border: 1px solid;
+      border-color: #ffffff #808080 #808080 #ffffff;
+      padding: 5px 6px;
+      text-align: left;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    table.win-table td {
+      border: 1px solid #d0d0d0;
+      padding: 6px 6px;
+      font-size: 12px;
+    }
+
+    table.win-table tr:nth-child(even) {
+      background: #f7f7f7;
+    }
+
+    table.win-table tr.selected {
+      background-color: var(--win-highlight) !important;
+      color: #ffffff !important;
+    }
+
+    table.win-table tr.selected td {
+      color: #ffffff !important;
+      border-color: #003780;
+    }
+
+    /* Record Summary Card in Mobile List */
+    .record-card-win {
+      background: #ffffff;
+      border: 2px solid;
+      border-color: #808080 #dfdfdf #dfdfdf #808080;
+      padding: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .record-card-win.selected {
+      background: #e8f1fc;
+      border-color: var(--win-highlight);
+    }
+
+    .rc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dotted #808080;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+    }
+
+    .rc-station {
+      font-weight: bold;
+      font-size: 14px;
+      color: #000080;
+    }
+
+    .rc-sno {
+      font-size: 11px;
+      background: #dfdfdf;
+      padding: 1px 6px;
+      border: 1px solid #808080;
+    }
+
+    .rc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .rc-label {
+      color: #555555;
+    }
+
+    .rc-val {
+      font-weight: bold;
+      color: #000000;
+    }
+
+    .rc-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      border-top: 1px dotted #cccccc;
+      padding-top: 6px;
+    }
+
+    /* Alert / Banner */
+    .banner {
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 2px solid;
+      display: none;
+    }
+
+    .banner-success {
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+
+    .banner-error {
+      background: #f8d7da;
+      border-color: #dc3545;
+      color: #721c24;
+    }
+
+    /* Modal Dialog for Edit */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .modal-dialog {
+      width: 100%;
+      max-width: 480px;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: var(--win-gray);
+      border: 3px solid;
+      border-color: #dfdfdf #000000 #000000 #dfdfdf;
+      box-shadow: 2px 2px 0 #000000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       TOP APPLICATION WINDOW
+       ============================================================ -->
+  <div class="win-window">
+    <div class="title-bar">
+      <div class="title-bar-text">
+        <span>🚂</span>
+        <span>Railway Detention Manager</span>
+      </div>
+      <div class="title-bar-controls">
+        <button class="title-btn" onclick="location.reload()">↺</button>
+        <button class="title-btn" onclick="window.scrollTo(0,0)">_</button>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs-nav">
+      <button class="tab-button active" id="tabBtnEnter" onclick="switchTab('enter')">
+        📝 Enter Detention
+      </button>
+      <button class="tab-button" id="tabBtnView" onclick="switchTab('view')">
+        📋 View & Edit Records (<span id="recordCountBadge">0</span>)
+      </button>
+    </div>
+
+    <div class="window-body">
+      <!-- Status Banner -->
+      <div id="statusBanner" class="banner banner-success"></div>
+
+      <!-- ============================================================
+           TAB 1: ENTER DETENTION DATA
+           ============================================================ -->
+      <div id="tabEnterSection">
+        <form id="detentionForm" onsubmit="handleSaveRecord(event)">
+          <!-- Record Type Selection -->
+          <div class="radio-bar">
+            <label class="radio-label">
+              <input type="radio" name="recordType" value="loading" checked onchange="updateRecordTypeUI()">
+              <span>Loading Detention</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="recordType" value="unloading" onchange="updateRecordTypeUI()">
+              <span>Unloading Detention</span>
+            </label>
+          </div>
+
+          <fieldset>
+            <legend id="formLegend">Add New Loading Detention Record</legend>
+
+            <div style="display: grid; grid-template-columns: 80px 1fr; gap: 8px;">
+              <div class="form-group">
+                <label class="form-label">S.No:</label>
+                <input type="text" id="sNoInput" class="form-input" placeholder="e.g. 34" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Station / Siding:</label>
+                <select id="stationSelect" class="form-select" required>
+                  <option value="">-- Select Station --</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Times Grid -->
+            <div class="form-group">
+              <label class="form-label">Arrival Time (HH:MM DD-MM-YYYY):</label>
+              <div class="dt-row">
+                <input type="text" id="arrlTime" class="form-input" placeholder="HH:MM DD-MM-YYYY" required>
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('arrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="arrlTime_picker" onchange="applyPicker('arrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Placement Time:</label>
+              <div class="dt-row">
+                <input type="text" id="placementTime" class="form-input" placeholder="HH:MM DD-MM-YYYY">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('placementTime')">📅 Pick</button>
+                <input type="datetime-local" id="placementTime_picker" onchange="applyPicker('placementTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Release Time:</label>
+              <div class="dt-row">
+                <input type="text" id="releaseTime" class="form-input" placeholder="HH:MM DD-MM-YYYY">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('releaseTime')">📅 Pick</button>
+                <input type="datetime-local" id="releaseTime_picker" onchange="applyPicker('releaseTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Out Loco No:</label>
+              <input type="text" id="outLocoNo" class="form-input" placeholder="e.g. 31245 or WAG9">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Loco Arrival Time:</label>
+              <div class="dt-row">
+                <input type="text" id="locoArrlTime" class="form-input" placeholder="HH:MM DD-MM-YYYY">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('locoArrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="locoArrlTime_picker" onchange="applyPicker('locoArrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Crew Arrival Time:</label>
+              <div class="dt-row">
+                <input type="text" id="crewArrlTime" class="form-input" placeholder="HH:MM DD-MM-YYYY">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('crewArrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="crewArrlTime_picker" onchange="applyPicker('crewArrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">TMR Arrival Time:</label>
+              <div class="dt-row">
+                <input type="text" id="tmrArrlTime" class="form-input" placeholder="HH:MM DD-MM-YYYY">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('tmrArrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="tmrArrlTime_picker" onchange="applyPicker('tmrArrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ready Time:</label>
+              <div class="dt-row">
+                <input type="text" id="readyTime" class="form-input" placeholder="HH:MM DD-MM-YYYY">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('readyTime')">📅 Pick</button>
+                <input type="datetime-local" id="readyTime_picker" onchange="applyPicker('readyTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Departure Time:</label>
+              <div class="dt-row">
+                <input type="text" id="deptTime" class="form-input" placeholder="HH:MM DD-MM-YYYY">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('deptTime')">📅 Pick</button>
+                <input type="datetime-local" id="deptTime_picker" onchange="applyPicker('deptTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Remarks:</label>
+              <textarea id="remarksInput" class="form-textarea" placeholder="Operational remarks, delays, loco details..."></textarea>
+            </div>
+          </fieldset>
+
+          <!-- Buttons -->
+          <div style="display: flex; gap: 8px;">
+            <button type="submit" class="win-btn win-btn-primary" style="flex: 2;">
+              💾 Save to Database
+            </button>
+            <button type="button" class="win-btn" style="flex: 1;" onclick="clearEnterForm()">
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ============================================================
+           TAB 2: VIEW & EDIT ENTERED RECORDS
+           ============================================================ -->
+      <div id="tabViewSection" style="display: none;">
+        <!-- Sub Switch: Loading / Unloading -->
+        <div class="radio-bar">
+          <label class="radio-label">
+            <input type="radio" name="viewType" value="loading" checked onchange="loadViewRecords()">
+            <span>Loading (<span id="countLoading">0</span>)</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="viewType" value="unloading" onchange="loadViewRecords()">
+            <span>Unloading (<span id="countUnloading">0</span>)</span>
+          </label>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="margin-bottom: 8px; display: flex; gap: 6px;">
+          <input type="text" id="viewSearchInput" class="form-input" placeholder="🔍 Search by station, loco, remarks..." oninput="filterViewRecords()">
+          <button class="win-btn" onclick="refreshRecords()">↺ Refresh</button>
+        </div>
+
+        <!-- Cards / Table container -->
+        <div id="recordsContainer">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Footer Status Bar -->
+      <div class="status-bar">
+        <span id="dbStatusText">● SQLite Database: Connected</span>
+        <span id="networkText">Port 8080</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL DIALOG: EDIT RECORD
+       ============================================================ -->
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="title-bar">
+        <div class="title-bar-text">
+          <span>✏️</span>
+          <span id="editModalTitle">Edit Detention Record</span>
+        </div>
+        <div class="title-bar-controls">
+          <button class="title-btn" onclick="closeEditModal()">X</button>
+        </div>
+      </div>
+
+      <div class="window-body">
+        <form id="editForm" onsubmit="handleUpdateRecord(event)">
+          <input type="hidden" id="editRecordId">
+          <input type="hidden" id="editRecordType">
+
+          <fieldset>
+            <legend>Edit Details</legend>
+
+            <div style="display: grid; grid-template-columns: 80px 1fr; gap: 8px;">
+              <div class="form-group">
+                <label class="form-label">S.No:</label>
+                <input type="text" id="editSNo" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Station:</label>
+                <select id="editStation" class="form-select" required>
+                  <option value="">-- Select Station --</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Arrival Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editArrlTime" class="form-input" required>
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editArrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="editArrlTime_picker" onchange="applyPicker('editArrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Placement Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editPlacementTime" class="form-input">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editPlacementTime')">📅 Pick</button>
+                <input type="datetime-local" id="editPlacementTime_picker" onchange="applyPicker('editPlacementTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Release Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editReleaseTime" class="form-input">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editReleaseTime')">📅 Pick</button>
+                <input type="datetime-local" id="editReleaseTime_picker" onchange="applyPicker('editReleaseTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Out Loco No:</label>
+              <input type="text" id="editOutLocoNo" class="form-input">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Loco Arrival Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editLocoArrlTime" class="form-input">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editLocoArrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="editLocoArrlTime_picker" onchange="applyPicker('editLocoArrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Crew Arrival Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editCrewArrlTime" class="form-input">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editCrewArrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="editCrewArrlTime_picker" onchange="applyPicker('editCrewArrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">TMR Arrival Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editTmrArrlTime" class="form-input">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editTmrArrlTime')">📅 Pick</button>
+                <input type="datetime-local" id="editTmrArrlTime_picker" onchange="applyPicker('editTmrArrlTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ready Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editReadyTime" class="form-input">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editReadyTime')">📅 Pick</button>
+                <input type="datetime-local" id="editReadyTime_picker" onchange="applyPicker('editReadyTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Departure Time:</label>
+              <div class="dt-row">
+                <input type="text" id="editDeptTime" class="form-input">
+                <button type="button" class="win-btn dt-pick-btn" onclick="pickDateTime('editDeptTime')">📅 Pick</button>
+                <input type="datetime-local" id="editDeptTime_picker" onchange="applyPicker('editDeptTime')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Remarks:</label>
+              <textarea id="editRemarks" class="form-textarea"></textarea>
+            </div>
+          </fieldset>
+
+          <div style="display: flex; gap: 6px; margin-top: 8px;">
+            <button type="submit" class="win-btn win-btn-primary" style="flex: 2;">
+              💾 Update Record
+            </button>
+            <button type="button" class="win-btn win-btn-danger" style="flex: 1;" onclick="handleDeleteRecord()">
+              🗑️ Delete
+            </button>
+            <button type="button" class="win-btn" style="flex: 1;" onclick="closeEditModal()">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MOBILE JAVASCRIPT APPLICATION LOGIC
+       ============================================================ -->
+  <script>
+    // State
+    let terminalsList = [];
+    let loadingRecords = [];
+    let unloadingRecords = [];
+    let currentTab = 'enter';
+
+    // Base API URL
+    const API_BASE = window.location.origin;
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadMasterStations();
+      await refreshRecords();
+      suggestNextSNo();
+    });
+
+    // Load master stations for dropdowns
+    async function loadMasterStations() {
+      try {
+        const res = await fetch(`${API_BASE}/api/terminals`);
+        if (res.ok) {
+          terminalsList = await res.json();
+          populateStationSelects();
+        }
+      } catch (err) {
+        console.warn('Could not fetch terminals from API, using defaults', err);
+        terminalsList = [
+          { code: 'KNGK', name: 'KAKINADA NEW GOODS COMPLEX' },
+          { code: 'TDD', name: 'TADEPALLIGUDEM' },
+          { code: 'BVM', name: 'BAYYAVARAM' },
+          { code: 'DWP', name: 'DWARAPUDI' },
+          { code: 'PGU', name: 'PADUGUPADU' },
+          { code: 'BVL', name: 'BIKKAVOLU' },
+          { code: 'OGL', name: 'ONGOLE' },
+          { code: 'SLO', name: 'SAMALKOT JN' },
+          { code: 'KCC', name: 'KRISHNA CANAL' },
+          { code: 'GDV', name: 'GUDIVADA' },
+          { code: 'RVD', name: 'RAVIKAMPADU' },
+          { code: 'EE', name: 'ELURU' },
+          { code: 'TEL', name: 'TENALI' },
+          { code: 'NDD', name: 'NIDADAVOLU' },
+          { code: 'AKPK', name: 'ADANI KRISHNAPATNAM PORT LTD' },
+          { code: 'KSLK', name: 'KAKINADA SEA PORT LTD' }
+        ];
+        populateStationSelects();
+      }
+    }
+
+    function populateStationSelects() {
+      const selects = [document.getElementById('stationSelect'), document.getElementById('editStation')];
+      selects.forEach(select => {
+        if (!select) return;
+        select.innerHTML = '<option value="">-- Select Station / Siding --</option>';
+        terminalsList.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.code;
+          opt.textContent = `${t.code} — ${t.name || t.servingStation || ''}`;
+          select.appendChild(opt);
+        });
+      });
+    }
+
+    // Refresh Records from API
+    async function refreshRecords() {
+      try {
+        const [lRes, uRes] = await Promise.all([
+          fetch(`${API_BASE}/api/loading`),
+          fetch(`${API_BASE}/api/unloading`)
+        ]);
+
+        if (lRes.ok) loadingRecords = await lRes.json();
+        if (uRes.ok) unloadingRecords = await uRes.json();
+
+        // Sync any offline items to server
+        await syncMobileOfflineQueue();
+
+        // Update counts
+        const total = (loadingRecords.length || 0) + (unloadingRecords.length || 0);
+        document.getElementById('recordCountBadge').textContent = total;
+        document.getElementById('countLoading').textContent = loadingRecords.length;
+        document.getElementById('countUnloading').textContent = unloadingRecords.length;
+
+        document.getElementById('dbStatusText').textContent = '● SQLite Database: Connected (Ready)';
+        document.getElementById('dbStatusText').style.color = '#006600';
+
+        // Save local mirror
+        localStorage.setItem('mobile_mirror_loading', JSON.stringify(loadingRecords));
+        localStorage.setItem('mobile_mirror_unloading', JSON.stringify(unloadingRecords));
+
+        if (currentTab === 'view') {
+          loadViewRecords();
+        }
+      } catch (err) {
+        console.error('Error fetching records, using local mirror:', err);
+        loadingRecords = JSON.parse(localStorage.getItem('mobile_mirror_loading') || '[]');
+        unloadingRecords = JSON.parse(localStorage.getItem('mobile_mirror_unloading') || '[]');
+        const offlineQ = JSON.parse(localStorage.getItem('mobile_offline_queue') || '[]');
+        offlineQ.forEach(q => {
+          if (q.type === 'loading') loadingRecords.push(q.payload);
+          else unloadingRecords.push(q.payload);
+        });
+
+        const total = (loadingRecords.length || 0) + (unloadingRecords.length || 0);
+        document.getElementById('recordCountBadge').textContent = total;
+        document.getElementById('countLoading').textContent = loadingRecords.length;
+        document.getElementById('countUnloading').textContent = unloadingRecords.length;
+
+        document.getElementById('dbStatusText').textContent = '⚠️ Server offline - Using local storage';
+        document.getElementById('dbStatusText').style.color = '#cc0000';
+        if (currentTab === 'view') {
+          loadViewRecords();
+        }
+      }
+    }
+
+    async function syncMobileOfflineQueue() {
+      const q = JSON.parse(localStorage.getItem('mobile_offline_queue') || '[]');
+      if (q.length === 0) return;
+      for (const item of q) {
+        const ep = item.type === 'loading' ? '/api/loading' : '/api/unloading';
+        try {
+          await fetch(`${API_BASE}${ep}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item.payload)
+          });
+        } catch (e) {}
+      }
+      localStorage.removeItem('mobile_offline_queue');
+    }
+
+    // Suggest next serial number
+    function suggestNextSNo() {
+      const rType = document.querySelector('input[name="recordType"]:checked').value;
+      const list = rType === 'loading' ? loadingRecords : unloadingRecords;
+      let maxNo = 0;
+      list.forEach(r => {
+        const n = parseInt(r.sNo, 10);
+        if (!isNaN(n) && n > maxNo) maxNo = n;
+      });
+      document.getElementById('sNoInput').value = maxNo + 1;
+    }
+
+    function updateRecordTypeUI() {
+      const rType = document.querySelector('input[name="recordType"]:checked').value;
+      document.getElementById('formLegend').textContent = 
+        rType === 'loading' ? 'Add New Loading Detention Record' : 'Add New Unloading Detention Record';
+      suggestNextSNo();
+    }
+
+    // Tab Switcher
+    function switchTab(tab) {
+      currentTab = tab;
+      const btnEnter = document.getElementById('tabBtnEnter');
+      const btnView = document.getElementById('tabBtnView');
+      const secEnter = document.getElementById('tabEnterSection');
+      const secView = document.getElementById('tabViewSection');
+
+      if (tab === 'enter') {
+        btnEnter.classList.add('active');
+        btnView.classList.remove('active');
+        secEnter.style.display = 'block';
+        secView.style.display = 'none';
+        suggestNextSNo();
+      } else {
+        btnView.classList.add('active');
+        btnEnter.classList.remove('active');
+        secEnter.style.display = 'none';
+        secView.style.display = 'block';
+        loadViewRecords();
+      }
+    }
+
+    // Date Time Helper: Native picker <-> HH:MM DD-MM-YYYY
+    function pickDateTime(targetInputId) {
+      const picker = document.getElementById(`${targetInputId}_picker`);
+      const textInput = document.getElementById(targetInputId);
+      if (!picker) return;
+
+      // If text input has a value like "08:15 04-09-2026", convert to YYYY-MM-DDTHH:MM
+      if (textInput && textInput.value) {
+        const parts = textInput.value.trim().split(' ');
+        if (parts.length === 2) {
+          const time = parts[0];
+          const dParts = parts[1].split('-');
+          if (dParts.length === 3) {
+            const day = dParts[0].padStart(2, '0');
+            const mon = dParts[1].padStart(2, '0');
+            const yr = dParts[2];
+            picker.value = `${yr}-${mon}-${day}T${time}`;
+          }
+        }
+      } else {
+        // Set current time as default
+        const now = new Date();
+        const yr = now.getFullYear();
+        const mon = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hr = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        picker.value = `${yr}-${mon}-${day}T${hr}:${min}`;
+      }
+
+      if (typeof picker.showPicker === 'function') {
+        picker.showPicker();
+      } else {
+        picker.click();
+      }
+    }
+
+    function applyPicker(targetInputId) {
+      const picker = document.getElementById(`${targetInputId}_picker`);
+      const textInput = document.getElementById(targetInputId);
+      if (!picker || !picker.value || !textInput) return;
+
+      // Convert "2026-09-04T08:15" -> "08:15 04-09-2026"
+      const val = picker.value;
+      const [datePart, timePart] = val.split('T');
+      if (datePart && timePart) {
+        const [yr, mon, day] = datePart.split('-');
+        textInput.value = `${timePart} ${day}-${mon}-${yr}`;
+      }
+    }
+
+    // Save Record (POST)
+    async function handleSaveRecord(e) {
+      e.preventDefault();
+      const rType = document.querySelector('input[name="recordType"]:checked').value;
+      const endpoint = rType === 'loading' ? '/api/loading' : '/api/unloading';
+
+      const payload = {
+        sNo: document.getElementById('sNoInput').value.trim(),
+        station: document.getElementById('stationSelect').value,
+        arrlTime: document.getElementById('arrlTime').value.trim(),
+        placementTime: document.getElementById('placementTime').value.trim(),
+        releaseTime: document.getElementById('releaseTime').value.trim(),
+        outLocoNo: document.getElementById('outLocoNo').value.trim(),
+        locoArrlTime: document.getElementById('locoArrlTime').value.trim(),
+        crewArrlTime: document.getElementById('crewArrlTime').value.trim(),
+        tmrArrlTime: document.getElementById('tmrArrlTime').value.trim(),
+        readyTime: document.getElementById('readyTime').value.trim(),
+        deptTime: document.getElementById('deptTime').value.trim(),
+        remarks: document.getElementById('remarksInput').value.trim()
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          showBanner(`Saved S.No ${payload.sNo} (${payload.station}) to ${rType} detention!`, true);
+          clearEnterForm();
+          await refreshRecords();
+          suggestNextSNo();
+        } else {
+          showBanner('Error saving record. Please check fields.', false);
+        }
+      } catch (err) {
+        console.warn('Network error: storing in mobile offline queue', err);
+        const q = JSON.parse(localStorage.getItem('mobile_offline_queue') || '[]');
+        payload.id = (rType === 'loading' ? 'LD-' : 'UD-') + Date.now();
+        payload._offline = true;
+        q.push({ type: rType, payload });
+        localStorage.setItem('mobile_offline_queue', JSON.stringify(q));
+
+        if (rType === 'loading') loadingRecords.push(payload);
+        else unloadingRecords.push(payload);
+
+        showBanner(`⚠️ Server offline: Saved record #${payload.sNo} to phone storage! It will sync to database when server is started.`, true);
+        clearEnterForm();
+        suggestNextSNo();
+      }
+    }
+
+    function clearEnterForm() {
+      document.getElementById('stationSelect').value = '';
+      document.getElementById('arrlTime').value = '';
+      document.getElementById('placementTime').value = '';
+      document.getElementById('releaseTime').value = '';
+      document.getElementById('outLocoNo').value = '';
+      document.getElementById('locoArrlTime').value = '';
+      document.getElementById('crewArrlTime').value = '';
+      document.getElementById('tmrArrlTime').value = '';
+      document.getElementById('readyTime').value = '';
+      document.getElementById('deptTime').value = '';
+      document.getElementById('remarksInput').value = '';
+      suggestNextSNo();
+    }
+
+    // View & Filter Records
+    function loadViewRecords() {
+      const vType = document.querySelector('input[name="viewType"]:checked').value;
+      const records = vType === 'loading' ? loadingRecords : unloadingRecords;
+      renderRecordsList(records);
+    }
+
+    function filterViewRecords() {
+      const vType = document.querySelector('input[name="viewType"]:checked').value;
+      const list = vType === 'loading' ? loadingRecords : unloadingRecords;
+      const q = (document.getElementById('viewSearchInput').value || '').toLowerCase().trim();
+
+      if (!q) {
+        renderRecordsList(list);
+        return;
+      }
+
+      const filtered = list.filter(r => {
+        return (r.station || '').toLowerCase().includes(q) ||
+               (r.sNo || '').toString().includes(q) ||
+               (r.outLocoNo || '').toLowerCase().includes(q) ||
+               (r.remarks || '').toLowerCase().includes(q);
+      });
+      renderRecordsList(filtered);
+    }
+
+    function renderRecordsList(records) {
+      const container = document.getElementById('recordsContainer');
+      const vType = document.querySelector('input[name="viewType"]:checked').value;
+
+      if (!records || records.length === 0) {
+        container.innerHTML = `
+          <div style="background: white; border: 2px solid #808080; padding: 16px; text-align: center; color: #666;">
+            No records found for ${vType} detention.
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      records.forEach(r => {
+        html += `
+          <div class="record-card-win" id="card-${r.id}">
+            <div class="rc-header">
+              <span class="rc-station">🚉 ${escapeHtml(r.station || 'UNKNOWN')}</span>
+              <span class="rc-sno">S.No #${escapeHtml(String(r.sNo || ''))}</span>
+            </div>
+            <div class="rc-grid">
+              <div><span class="rc-label">Arrival:</span> <span class="rc-val">${escapeHtml(r.arrlTime || '-')}</span></div>
+              <div><span class="rc-label">Placement:</span> <span class="rc-val">${escapeHtml(r.placementTime || '-')}</span></div>
+              <div><span class="rc-label">Release:</span> <span class="rc-val">${escapeHtml(r.releaseTime || '-')}</span></div>
+              <div><span class="rc-label">Loco No:</span> <span class="rc-val">${escapeHtml(r.outLocoNo || '-')}</span></div>
+            </div>
+            ${r.remarks ? `<div style="margin-top: 4px; font-size: 11px; color: #444;"><em>Remarks:</em> ${escapeHtml(r.remarks)}</div>` : ''}
+            <div class="rc-actions">
+              <button class="win-btn win-btn-primary" style="flex: 1;" onclick="openEditModal('${r.id}', '${vType}')">
+                ✏️ Edit Record
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // Edit Modal Management
+    function openEditModal(recordId, recordType) {
+      const list = recordType === 'loading' ? loadingRecords : unloadingRecords;
+      const rec = list.find(r => String(r.id) === String(recordId));
+      if (!rec) return;
+
+      document.getElementById('editRecordId').value = rec.id;
+      document.getElementById('editRecordType').value = recordType;
+      document.getElementById('editModalTitle').textContent = `Edit ${recordType.toUpperCase()} Record #${rec.sNo} (${rec.station})`;
+
+      document.getElementById('editSNo').value = rec.sNo || '';
+      document.getElementById('editStation').value = rec.station || '';
+      document.getElementById('editArrlTime').value = rec.arrlTime || '';
+      document.getElementById('editPlacementTime').value = rec.placementTime || '';
+      document.getElementById('editReleaseTime').value = rec.releaseTime || '';
+      document.getElementById('editOutLocoNo').value = rec.outLocoNo || '';
+      document.getElementById('editLocoArrlTime').value = rec.locoArrlTime || '';
+      document.getElementById('editCrewArrlTime').value = rec.crewArrlTime || '';
+      document.getElementById('editTmrArrlTime').value = rec.tmrArrlTime || '';
+      document.getElementById('editReadyTime').value = rec.readyTime || '';
+      document.getElementById('editDeptTime').value = rec.deptTime || '';
+      document.getElementById('editRemarks').value = rec.remarks || '';
+
+      document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    // Update Record (PUT)
+    async function handleUpdateRecord(e) {
+      e.preventDefault();
+      const recId = document.getElementById('editRecordId').value;
+      const recType = document.getElementById('editRecordType').value;
+      const endpoint = recType === 'loading' ? `/api/loading/${recId}` : `/api/unloading/${recId}`;
+
+      const payload = {
+        sNo: document.getElementById('editSNo').value.trim(),
+        station: document.getElementById('editStation').value,
+        arrlTime: document.getElementById('editArrlTime').value.trim(),
+        placementTime: document.getElementById('editPlacementTime').value.trim(),
+        releaseTime: document.getElementById('editReleaseTime').value.trim(),
+        outLocoNo: document.getElementById('editOutLocoNo').value.trim(),
+        locoArrlTime: document.getElementById('editLocoArrlTime').value.trim(),
+        crewArrlTime: document.getElementById('editCrewArrlTime').value.trim(),
+        tmrArrlTime: document.getElementById('editTmrArrlTime').value.trim(),
+        readyTime: document.getElementById('editReadyTime').value.trim(),
+        deptTime: document.getElementById('editDeptTime').value.trim(),
+        remarks: document.getElementById('editRemarks').value.trim()
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          closeEditModal();
+          showBanner(`Record #${payload.sNo} (${payload.station}) updated successfully!`, true);
+          await refreshRecords();
+        } else {
+          alert('Failed to update record. Check server logs.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error while updating record.');
+      }
+    }
+
+    // Delete Record (DELETE)
+    async function handleDeleteRecord() {
+      const recId = document.getElementById('editRecordId').value;
+      const recType = document.getElementById('editRecordType').value;
+      const sNo = document.getElementById('editSNo').value;
+      const station = document.getElementById('editStation').value;
+
+      if (!confirm(`Are you sure you want to permanently delete record #${sNo} (${station})?`)) {
+        return;
+      }
+
+      const endpoint = recType === 'loading' ? `/api/loading/${recId}` : `/api/unloading/${recId}`;
+      try {
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method: 'DELETE'
+        });
+
+        if (res.ok) {
+          closeEditModal();
+          showBanner(`Record #${sNo} was deleted.`, true);
+          await refreshRecords();
+        } else {
+          alert('Failed to delete record.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error while deleting record.');
+      }
+    }
+
+    // Helper: Toast Banner
+    function showBanner(msg, isSuccess) {
+      const b = document.getElementById('statusBanner');
+      b.textContent = msg;
+      b.className = `banner ${isSuccess ? 'banner-success' : 'banner-error'}`;
+      b.style.display = 'block';
+      setTimeout(() => {
+        b.style.display = 'none';
+      }, 4000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

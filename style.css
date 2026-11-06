@@ -1,0 +1,891 @@
+/* ==========================================================================
+   OLD WINDOWS 98 / 95 RETRO THEME
+   Terminal Detention & Railway Terminals Management System
+   ========================================================================== */
+
+:root {
+  --win-bg: #008080; /* Classic Windows Teal Desktop */
+  --win-gray: #c0c0c0; /* Standard 3D Face */
+  --win-light: #ffffff; /* 3D Light Highlight */
+  --win-shadow: #808080; /* 3D Shadow */
+  --win-dark-shadow: #000000; /* 3D Dark Shadow */
+  --win-title-blue-start: #000080;
+  --win-title-blue-end: #1084d0;
+  --win-title-inactive-start: #808080;
+  --win-title-inactive-end: #b5b5b5;
+  --win-title-text: #ffffff;
+  --win-text: #000000;
+  --win-highlight-bg: #0a64dc; /* Updated vibrant Royal Blue */
+  --win-highlight-text: #ffffff;
+  --win-font: "MS Sans Serif", Tahoma, "Segoe UI", Arial, sans-serif;
+  --win-font-mono: "Lucida Console", "Courier New", monospace;
+  --win-error-red: #c00000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  font-family: var(--win-font);
+  font-size: 11px;
+  background-color: var(--win-bg);
+  color: var(--win-text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 3D Borders Helpers */
+.outset-border {
+  border: 2px solid;
+  border-color: var(--win-light) var(--win-dark-shadow) var(--win-dark-shadow) var(--win-light);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-shadow);
+}
+
+.inset-border {
+  border: 2px solid;
+  border-color: var(--win-shadow) var(--win-light) var(--win-light) var(--win-shadow);
+  box-shadow: inset 1px 1px 0 var(--win-dark-shadow), inset -1px -1px 0 var(--win-gray);
+  background-color: #ffffff;
+}
+
+.button-border {
+  border: 2px solid;
+  border-color: var(--win-light) var(--win-dark-shadow) var(--win-dark-shadow) var(--win-light);
+  box-shadow: inset 1px 1px 0 var(--win-light), inset -1px -1px 0 var(--win-shadow);
+  background: var(--win-gray);
+  font-family: var(--win-font);
+  font-size: 11px;
+  color: var(--win-text);
+  padding: 3px 10px;
+  cursor: pointer;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.button-border:hover {
+  filter: brightness(1.05);
+}
+
+.button-border:active, .button-border.pressed {
+  border-color: var(--win-dark-shadow) var(--win-light) var(--win-light) var(--win-dark-shadow);
+  box-shadow: inset 1px 1px 0 var(--win-shadow), inset -1px -1px 0 var(--win-light);
+  padding: 4px 9px 2px 11px;
+}
+
+.button-border:disabled {
+  color: #808080;
+  text-shadow: 1px 1px 0 #ffffff;
+  cursor: default;
+  filter: none;
+}
+
+/* Desktop Workspace */
+#desktop {
+  flex: 1;
+  position: relative;
+  padding: 8px;
+  overflow: hidden;
+  display: flex;
+}
+
+/* Main Window */
+.window {
+  background: var(--win-gray);
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  bottom: 38px;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  min-width: 820px;
+  min-height: 500px;
+}
+
+/* Title Bar */
+.title-bar {
+  background: linear-gradient(90deg, var(--win-title-blue-start) 0%, var(--win-title-blue-end) 100%);
+  color: var(--win-title-text);
+  font-weight: bold;
+  padding: 3px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  cursor: default;
+}
+
+.title-bar.inactive {
+  background: linear-gradient(90deg, var(--win-title-inactive-start) 0%, var(--win-title-inactive-end) 100%);
+  color: #dfdfdf;
+}
+
+.title-bar-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-bar-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.title-bar-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.title-btn {
+  width: 16px;
+  height: 14px;
+  padding: 0;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 10px;
+}
+
+/* Menu Bar */
+.menu-bar {
+  display: flex;
+  background: var(--win-gray);
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--win-shadow);
+  gap: 4px;
+}
+
+.menu-item {
+  position: relative;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.menu-item:hover, .menu-item.active {
+  background: var(--win-highlight-bg);
+  color: var(--win-highlight-text);
+}
+
+.menu-item u {
+  text-decoration: underline;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--win-gray);
+  min-width: 180px;
+  z-index: 100;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+}
+
+.menu-item.active .dropdown-menu {
+  display: block;
+}
+
+.dropdown-entry {
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--win-text);
+}
+
+.dropdown-entry:hover {
+  background: var(--win-highlight-bg);
+  color: var(--win-highlight-text);
+}
+
+.dropdown-separator {
+  height: 1px;
+  background: var(--win-shadow);
+  border-bottom: 1px solid var(--win-light);
+  margin: 3px 2px;
+}
+
+/* Windows 98 Property Sheet Tabs */
+.tab-strip {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px 0 6px;
+  background: var(--win-gray);
+  border-bottom: 1px solid var(--win-light);
+  position: relative;
+  z-index: 5;
+}
+
+.tab-btn {
+  background: var(--win-gray);
+  border: 2px solid;
+  border-color: var(--win-light) var(--win-dark-shadow) var(--win-shadow) var(--win-light);
+  border-bottom: none;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  padding: 4px 12px;
+  font-family: var(--win-font);
+  font-size: 11px;
+  cursor: pointer;
+  position: relative;
+  bottom: -1px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tab-btn:hover {
+  background: #d6d6d6;
+}
+
+.tab-btn.active {
+  background: var(--win-gray);
+  font-weight: bold;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  bottom: 0px;
+  border-bottom: 2px solid var(--win-gray);
+  z-index: 6;
+}
+
+.tab-count {
+  font-size: 10px;
+  background: #ffffff;
+  border: 1px solid #808080;
+  padding: 0 4px;
+  border-radius: 2px;
+  font-weight: normal;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  background: var(--win-gray);
+  border-bottom: 1px solid var(--win-shadow);
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  padding: 3px 8px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.toolbar-separator {
+  width: 2px;
+  height: 20px;
+  background: var(--win-shadow);
+  border-right: 1px solid var(--win-light);
+  margin: 0 3px;
+}
+
+.toolbar-search {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.toolbar-input {
+  height: 22px;
+  padding: 2px 5px;
+  font-family: var(--win-font);
+  font-size: 11px;
+  outline: none;
+  min-width: 170px;
+}
+
+.toolbar-select {
+  height: 22px;
+  padding: 1px 4px;
+  font-family: var(--win-font);
+  font-size: 11px;
+  outline: none;
+  background: #ffffff;
+}
+
+/* Main Content Area */
+.window-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  padding: 4px;
+  gap: 4px;
+  background: var(--win-gray);
+  position: relative;
+}
+
+.tab-view {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-view.active {
+  display: flex;
+}
+
+/* Splitter View for Master Terminals */
+.master-split-view {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  gap: 4px;
+}
+
+/* Left Sidebar: TreeView Explorer */
+.tree-pane {
+  width: 230px;
+  min-width: 180px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-header {
+  padding: 2px 5px;
+  font-weight: bold;
+  background: #d8d8d8;
+  border-bottom: 1px solid var(--win-shadow);
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.tree-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 4px;
+  background: #ffffff;
+  user-select: none;
+}
+
+.tree-node {
+  margin: 1px 0;
+  display: block;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tree-row:hover {
+  background: #e0e8f0;
+}
+
+.tree-row.selected {
+  background: var(--win-highlight-bg) !important;
+  color: var(--win-highlight-text) !important;
+  border-radius: 2px;
+}
+
+.tree-row.selected * {
+  color: var(--win-highlight-text) !important;
+}
+
+.tree-toggle {
+  width: 11px;
+  height: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-family: var(--win-font-mono);
+  background: #ffffff;
+  border: 1px solid #808080;
+  color: #000000;
+  line-height: 9px;
+  cursor: pointer;
+}
+
+.tree-icon {
+  font-size: 13px;
+}
+
+.tree-children {
+  padding-left: 16px;
+  border-left: 1px dotted #a0a0a0;
+  margin-left: 5px;
+}
+
+.tree-badge {
+  font-size: 10px;
+  opacity: 0.8;
+  margin-left: auto;
+  padding-left: 6px;
+}
+
+/* Right Content Area: ListView Table */
+.content-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.table-container {
+  flex: 1;
+  overflow: auto;
+  background: #ffffff;
+  position: relative;
+}
+
+table.win-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--win-font);
+  font-size: 11px;
+}
+
+table.win-table th {
+  background: var(--win-gray);
+  border: 2px solid;
+  border-color: var(--win-light) var(--win-dark-shadow) var(--win-dark-shadow) var(--win-light);
+  padding: 3px 6px;
+  text-align: left;
+  font-weight: normal;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+table.win-table th:active {
+  border-color: var(--win-dark-shadow) var(--win-light) var(--win-light) var(--win-dark-shadow);
+  padding: 4px 5px 2px 7px;
+}
+
+table.win-table th .sort-arrow {
+  margin-left: 4px;
+  font-size: 9px;
+}
+
+table.win-table td {
+  padding: 3px 6px;
+  border-right: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 320px;
+}
+
+table.win-table td.time-cell {
+  font-family: var(--win-font-mono);
+  font-size: 11px;
+}
+
+table.win-table tr:hover td {
+  background-color: #f0f5ff;
+}
+
+.station-cell {
+  color: #000080;
+  font-weight: bold;
+}
+
+table.win-table tr.selected td {
+  background-color: var(--win-highlight-bg) !important;
+  color: var(--win-highlight-text) !important;
+}
+
+table.win-table tr.selected td * {
+  color: var(--win-highlight-text) !important;
+}
+
+table.win-table tr.selected .station-cell {
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+}
+
+table.win-table tr.selected td.time-cell {
+  color: #ffff88 !important;
+  font-weight: bold;
+}
+
+table.win-table tr.selected td:first-child {
+  border-left: 3px solid #ffcc00 !important;
+}
+
+table.win-table tr.inactive-row td {
+  color: #7f7f7f;
+  background-color: #fcfcfc;
+}
+
+table.win-table tr.selected.inactive-row td {
+  color: #dfdfdf !important;
+  background-color: var(--win-highlight-bg) !important;
+  opacity: 0.9;
+}
+
+/* Status Badges */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 2px;
+}
+
+.status-active {
+  background-color: #00aa00;
+  color: #ffffff;
+  border: 1px solid #006600;
+}
+
+.status-inactive {
+  background-color: #888888;
+  color: #ffffff;
+  border: 1px solid #555555;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: currentColor;
+}
+
+/* Quick Action Buttons in Table */
+.action-btns {
+  display: flex;
+  gap: 3px;
+}
+
+.action-btn-sm {
+  font-size: 10px;
+  padding: 1px 5px;
+  height: 18px;
+  line-height: 14px;
+}
+
+/* Status Bar */
+.status-bar {
+  display: flex;
+  gap: 3px;
+  padding: 2px 3px;
+  background: var(--win-gray);
+  border-top: 1px solid var(--win-shadow);
+}
+
+.status-cell {
+  padding: 2px 6px;
+  background: var(--win-gray);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.status-cell.grow {
+  flex: 1;
+}
+
+/* Modal Dialogs */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-window {
+  width: 620px;
+  max-width: 96vw;
+  background: var(--win-gray);
+  box-shadow: 4px 4px 14px rgba(0, 0, 0, 0.65);
+  position: relative;
+}
+
+.modal-body {
+  padding: 12px;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+.form-group {
+  margin-bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-weight: bold;
+  font-size: 11px;
+  color: #000000;
+}
+
+.time-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.time-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn-time-mini {
+  padding: 1px 5px;
+  font-size: 10px;
+  height: 19px;
+  line-height: 14px;
+}
+
+.btn-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.native-time-picker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.form-group input[type="text"],
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 3px 6px;
+  font-family: var(--win-font);
+  font-size: 11px;
+  outline: none;
+}
+
+.form-group input.time-input {
+  font-family: var(--win-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.form-group input.input-error {
+  border-color: var(--win-error-red) !important;
+  background-color: #fff0f0 !important;
+  box-shadow: inset 1px 1px 0 #900, inset -1px -1px 0 #faa !important;
+}
+
+.field-error-msg {
+  font-size: 10px;
+  color: var(--win-error-red);
+  font-weight: bold;
+  margin-top: 1px;
+  display: none;
+}
+
+.field-error-msg.visible {
+  display: block;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 48px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  margin-top: 4px;
+}
+
+/* Detention Calculation Banner in Modal */
+.detention-calc-banner {
+  background: #ffffe0;
+  border: 1px solid #e0c000;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.detention-calc-banner strong {
+  color: #000080;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--win-shadow);
+}
+
+/* Confirm Dialog Special */
+.confirm-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.confirm-icon {
+  font-size: 32px;
+}
+
+/* Windows Taskbar */
+#taskbar {
+  height: 30px;
+  background: var(--win-gray);
+  border-top: 2px solid var(--win-light);
+  display: flex;
+  align-items: center;
+  padding: 2px 3px;
+  gap: 4px;
+  z-index: 500;
+}
+
+#start-button {
+  height: 24px;
+  padding: 2px 8px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.5px;
+}
+
+.start-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.taskbar-tasks {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+}
+
+.taskbar-item {
+  height: 24px;
+  min-width: 150px;
+  max-width: 250px;
+  padding: 2px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: bold;
+}
+
+#systray {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  height: 22px;
+  margin-left: auto;
+}
+
+/* Start Menu Popup */
+#start-menu {
+  display: none;
+  position: fixed;
+  bottom: 30px;
+  left: 2px;
+  width: 230px;
+  background: var(--win-gray);
+  z-index: 1000;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+}
+
+#start-menu.open {
+  display: flex;
+}
+
+.start-banner {
+  width: 28px;
+  background: linear-gradient(180deg, #000080 0%, #1084d0 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 8px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.start-items {
+  flex: 1;
+  padding: 2px;
+}
+
+.start-entry {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.start-entry:hover {
+  background: var(--win-highlight-bg);
+  color: var(--win-highlight-text);
+}

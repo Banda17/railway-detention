@@ -1,0 +1,4 @@
+Log ID,Date,Load / BOL #,Carrier / Driver,Terminal / Facility,Appt Time,Check-In Time,Dock / Loading Time,Check-Out Time,Total Dwell (Hrs),Free Time (Hrs),Billable Detention (Hrs),Hourly Rate ($),Total Detention ($),Status
+DTL-001,2026-11-05,BOL-88421,Swift / J. Doe,Port Terminal Pier A,08:00,07:45,11:30,12:45,5.0,2.0,3.0,75.00,225.00,Pending Approval
+DTL-002,2026-11-05,BOL-88422,JB Hunt / M. Smith,Rail Ramp 4,10:30,10:15,11:00,12:00,1.75,2.0,0.0,75.00,0.00,Within Free Time
+
