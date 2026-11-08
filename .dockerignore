@@ -10,4 +10,11 @@ __pycache__
 scratch/
 .system_generated/
 *.log
+# Exclude local database — cloud uses persistent volume
+detention.db
+detention.db-wal
+detention.db-shm
+backups/
+CLOUD_RUN_GUIDE.md
+terminal_detention.zip
 

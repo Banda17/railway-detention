@@ -337,6 +337,12 @@ if __name__ == "__main__":
     import sys
     seed_demo = "--seed-demo" in sys.argv
     empty_terminals = "--empty-terminals" in sys.argv
-    force = "--force" in sys.argv or "-f" in sys.argv or True  # Default to clean empty tables
-    print("[INFO] Initializing empty database with tables only...")
+    force = "--force" in sys.argv or "-f" in sys.argv  # NEVER auto-force — user must pass --force explicitly
+    if force:
+        print("[WARNING] --force flag detected. This will DELETE all loading/unloading data!")
+        confirm = input("Type 'YES' to confirm data wipe: ").strip()
+        if confirm != "YES":
+            print("[ABORTED] No data was deleted.")
+            sys.exit(0)
+    print("[INFO] Initializing database (force={}, seed_demo={}, empty_terminals={})...".format(force, seed_demo, empty_terminals))
     initialize(force=force, seed_demo=seed_demo, empty_terminals=empty_terminals)

@@ -28,6 +28,53 @@ if sys.stderr and hasattr(sys.stderr, "reconfigure"):
 PORT = int(os.environ.get("PORT", 8080))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("DB_PATH", os.path.join(BASE_DIR, "detention.db"))
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Setup file logger (persists to logs/server.log)
+log_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+file_handler = RotatingFileHandler(
+    os.path.join(LOG_DIR, "server.log"),
+    maxBytes=2*1024*1024,  # 2 MB per file
+    backupCount=5,
+    encoding="utf-8"
+)
+file_handler.setFormatter(log_formatter)
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(log_formatter)
+
+logger = logging.getLogger("detention")
+logger.setLevel(logging.INFO)
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+ACTIVITY_LOG_FILE = os.path.join(LOG_DIR, "activity_log.txt")
+
+def log_activity(action, table_name, record_id, details="", payload=None):
+    """
+    Dedicated human-readable activity log file: logs/activity_log.txt
+    Records every single INSERT, UPDATE, DELETE, and SYSTEM action with timestamps and payload.
+    """
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    payload_str = ""
+    if payload and isinstance(payload, dict):
+        clean_items = [f"{k}={v}" for k, v in payload.items() if v not in (None, "")]
+        if clean_items:
+            payload_str = f" | Fields: [{', '.join(clean_items)}]"
+    
+    line = f"[{ts}] [{action.upper():<6}] [{table_name}] ID={record_id}: {details}{payload_str}\n"
+    try:
+        with open(ACTIVITY_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception as e:
+        print(f"Failed to write to activity log: {e}")
+    
+    # Also log to structured server log
+    logger.info(f"{action.upper()} on {table_name} (ID: {record_id}) - {details}")
 
 import socket
 
@@ -239,6 +286,29 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                 settings = {r["key"]: r["value"] for r in cursor.fetchall()}
                 self.send_json(settings)
 
+            # Activity Log Viewer
+            elif path == "/api/logs":
+                lines = []
+                if os.path.exists(ACTIVITY_LOG_FILE):
+                    try:
+                        with open(ACTIVITY_LOG_FILE, "r", encoding="utf-8") as f:
+                            all_lines = f.readlines()
+                            lines = all_lines[-200:] # Last 200 activity entries
+                    except Exception as e:
+                        lines = [f"Error reading activity log: {e}"]
+                else:
+                    # Fallback to audit_log table
+                    cursor.execute("SELECT id, action, table_name, record_id, details, created_at FROM audit_log ORDER BY id DESC LIMIT 100;")
+                    rows = [dict(r) for r in cursor.fetchall()]
+                    lines = [f"[{r['created_at']}] [{r['action']}] [{r['table_name']}] ID={r['record_id']}: {r.get('details','')}\n" for r in rows]
+
+                self.send_json({
+                    "status": "ok",
+                    "logFile": ACTIVITY_LOG_FILE,
+                    "totalLines": len(lines),
+                    "entries": lines
+                })
+
             else:
                 self.send_json({"error": "Unknown API endpoint"}, 404)
 
@@ -268,10 +338,12 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                     body.get("servingStation", "").upper().strip(),
                     1 if body.get("active", True) else 0
                 ))
+                details = f"Added terminal {body.get('code')} ({body.get('name')})"
                 cursor.execute("INSERT INTO audit_log (action, table_name, record_id, details) VALUES ('INSERT', 'terminals', ?, ?);",
-                               (new_id, f"Added terminal {body.get('code')}"))
+                               (new_id, details))
                 conn.commit()
                 sync_backup(conn)
+                log_activity("INSERT", "terminals", new_id, details, body)
                 self.send_json({"success": True, "id": new_id})
 
             elif path == "/api/loading":
@@ -297,10 +369,12 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                     body.get("deptTime", ""),
                     body.get("remarks", "")
                 ))
+                details = f"Station={body.get('station')} SNo={body.get('sNo')} Loco={body.get('outLocoNo')}"
                 cursor.execute("INSERT INTO audit_log (action, table_name, record_id, details) VALUES ('INSERT', 'loading_detention', ?, ?);",
-                               (new_id, f"Added loading record for {body.get('station')}"))
+                               (new_id, details))
                 conn.commit()
                 sync_backup(conn)
+                log_activity("INSERT", "loading_detention", new_id, details, body)
                 self.send_json({"success": True, "id": new_id})
 
             elif path == "/api/unloading":
@@ -326,23 +400,58 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                     body.get("deptTime", ""),
                     body.get("remarks", "")
                 ))
+                details = f"Station={body.get('station')} SNo={body.get('sNo')} Loco={body.get('outLocoNo')}"
                 cursor.execute("INSERT INTO audit_log (action, table_name, record_id, details) VALUES ('INSERT', 'unloading_detention', ?, ?);",
-                               (new_id, f"Added unloading record for {body.get('station')}"))
+                               (new_id, details))
                 conn.commit()
                 sync_backup(conn)
+                log_activity("INSERT", "unloading_detention", new_id, details, body)
                 self.send_json({"success": True, "id": new_id})
 
             elif path == "/api/settings":
                 for k, v in body.items():
                     cursor.execute("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP);", (k, str(v)))
                 conn.commit()
+                log_activity("UPDATE", "app_settings", "SETTINGS", f"Updated settings: {list(body.keys())}", body)
                 self.send_json({"success": True})
 
             elif path == "/api/reset":
-                # Re-seed database
+                # STRICT SAFETY GUARD: Must send {"confirm": "CONFIRM RESET"}
+                if body.get("confirm") != "CONFIRM RESET":
+                    logger.warning("RESET API rejected: missing {'confirm': 'CONFIRM RESET'}")
+                    self.send_json({"error": "Reset blocked for safety. You must send {'confirm': 'CONFIRM RESET'}"}, 403)
+                    return
+
+                logger.warning("RESET API called with confirmation! Creating safety backup first...")
+                sync_backup(conn)
+                
+                # Count records before reset
+                cursor.execute("SELECT COUNT(*) FROM loading_detention;")
+                load_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM unloading_detention;")
+                unload_count = cursor.fetchone()[0]
+                
+                if load_count > 0 or unload_count > 0:
+                    backup_dir = os.path.join(BASE_DIR, "backups")
+                    os.makedirs(backup_dir, exist_ok=True)
+                    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    
+                    cursor.execute("SELECT * FROM loading_detention ORDER BY CAST(s_no AS INTEGER) ASC;")
+                    load_rows = [dict(r) for r in cursor.fetchall()]
+                    with open(os.path.join(backup_dir, f"loading_BEFORE_RESET_{ts}.json"), "w", encoding="utf-8") as f:
+                        json.dump(load_rows, f, indent=2, ensure_ascii=False)
+                    
+                    cursor.execute("SELECT * FROM unloading_detention ORDER BY CAST(s_no AS INTEGER) ASC;")
+                    unload_rows = [dict(r) for r in cursor.fetchall()]
+                    with open(os.path.join(backup_dir, f"unloading_BEFORE_RESET_{ts}.json"), "w", encoding="utf-8") as f:
+                        json.dump(unload_rows, f, indent=2, ensure_ascii=False)
+                    
+                    logger.warning(f"RESET: Backed up {load_count} loading + {unload_count} unloading records to backups/*_BEFORE_RESET_{ts}.json")
+                
                 import init_db
                 init_db.initialize(force=True)
-                self.send_json({"success": True, "message": "Database reset to source defaults."})
+                log_activity("RESET_WIPE", "ALL_TABLES", "SYSTEM", f"Reset executed. Wiped {load_count} loading + {unload_count} unloading records.")
+                self.send_json({"success": True, "message": f"Database reset. {load_count + unload_count} records backed up to backups/ folder."})
 
             else:
                 self.send_json({"error": "Unknown POST endpoint"}, 404)
@@ -376,6 +485,7 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                     ))
                     conn.commit()
                     sync_backup(conn)
+                    log_activity("UPDATE", "terminals", rec_id, f"Updated terminal {body.get('code')}", body)
                     self.send_json({"success": True, "id": rec_id})
 
                 elif resource in ("loading", "unloading"):
@@ -403,6 +513,7 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                     ))
                     conn.commit()
                     sync_backup(conn)
+                    log_activity("UPDATE", tbl, rec_id, f"Updated record Station={body.get('station')} SNo={body.get('sNo')}", body)
                     self.send_json({"success": True, "id": rec_id})
 
                 else:
@@ -431,10 +542,19 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
 
                 if resource in tbl_map:
                     tbl = tbl_map[resource]
+                    
+                    # Fetch snapshot before deleting
+                    cursor.execute(f"SELECT * FROM {tbl} WHERE id = ?;", (rec_id,))
+                    row = cursor.fetchone()
+                    snapshot = dict(row) if row else {}
+
                     cursor.execute(f"DELETE FROM {tbl} WHERE id = ?;", (rec_id,))
-                    cursor.execute("INSERT INTO audit_log (action, table_name, record_id) VALUES ('DELETE', ?, ?);", (tbl, rec_id))
+                    details = f"Deleted record snapshot: {snapshot}"
+                    cursor.execute("INSERT INTO audit_log (action, table_name, record_id, details) VALUES ('DELETE', ?, ?, ?);",
+                                   (tbl, rec_id, details))
                     conn.commit()
                     sync_backup(conn)
+                    log_activity("DELETE", tbl, rec_id, details, snapshot)
                     self.send_json({"success": True, "id": rec_id})
                 else:
                     self.send_json({"error": "Unknown resource"}, 404)
@@ -464,10 +584,16 @@ def free_port(port=8080):
 def run_server():
     os.chdir(BASE_DIR)
     free_port(PORT)
-    # Ensure database is created
-    if not os.path.exists(DB_PATH):
-        import init_db
-        init_db.initialize(force=False)
+    # Always ensure database tables exist and terminals are seeded.
+    # This uses force=False so it NEVER deletes existing user data.
+    # Safe to run on every startup — only creates what's missing.
+    import init_db
+    db_existed = os.path.exists(DB_PATH)
+    init_db.initialize(force=False, seed_demo=False, empty_terminals=False)
+    if not db_existed:
+        print("[INIT] Created fresh database with 53 terminals.")
+    else:
+        print("[INIT] Existing database verified. User data preserved.")
 
     handler = DetentionAPIHandler
     socketserver.TCPServer.allow_reuse_address = True

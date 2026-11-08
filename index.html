@@ -116,8 +116,8 @@
         <button class="button-border toolbar-btn" onclick="exportCSV()" title="Export current view to CSV spreadsheet">
           💾 Export CSV
         </button>
-        <button class="button-border toolbar-btn" onclick="resetToDefault()" title="Reset all data back to original Google Sheets and PDF defaults">
-          🔄 Reset Defaults
+        <button class="button-border toolbar-btn" onclick="openLogModal()" title="View audit log of all entered data and system changes">
+          📋 View Log
         </button>
 
         <div class="toolbar-separator"></div>
@@ -678,6 +678,36 @@
         </div>
         <div class="modal-footer">
           <button class="button-border" style="min-width: 80px;" onclick="closeModal('about-modal')"><strong>OK</strong></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Activity Log Dialog -->
+  <div class="modal-overlay" id="log-modal">
+    <div class="modal-window outset-border" style="width: 760px; max-width: 95vw;">
+      <div class="title-bar">
+        <div class="title-bar-text">📋 System Activity &amp; Audit Log (logs/activity_log.txt)</div>
+        <div class="title-bar-controls">
+          <button class="button-border title-btn" onclick="closeModal('log-modal')">✕</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <strong>Recent Data Operations</strong> (Entries, Updates, Deletions)
+            <div style="font-size: 10px; color: #555;">Logged in real time to <code>logs/activity_log.txt</code></div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="button-border" onclick="loadActivityLogs()" style="padding: 2px 8px;">🔄 Refresh</button>
+            <button class="button-border" onclick="downloadActivityLog()" style="padding: 2px 8px;">💾 Download Log</button>
+          </div>
+        </div>
+        <div class="inset-border" style="background: #000; color: #00ff00; padding: 10px; height: 320px; overflow-y: auto; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; white-space: pre-wrap; line-height: 1.4;" id="log-content-box">
+Loading activity log...
+        </div>
+        <div class="modal-footer" style="margin-top: 10px;">
+          <button class="button-border" style="min-width: 80px;" onclick="closeModal('log-modal')"><strong>Close</strong></button>
         </div>
       </div>
     </div>

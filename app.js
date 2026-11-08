@@ -494,29 +494,82 @@ async function syncOfflineRecordsToServer() {
 }
 
 async function resetToDefault() {
-  if (confirm("Reset ALL database tables (Loading, Unloading, and Master Terminals) to original source defaults?")) {
-    if (isServerMode) {
-      try {
-        await fetch("/api/reset", { method: "POST" });
-        await loadAllData();
-        sound.alert();
-        return;
-      } catch (e) {
-        console.error("Reset API failed:", e);
-      }
-    }
-
-    terminals = JSON.parse(JSON.stringify(INITIAL_TERMINALS));
-    loadingData = JSON.parse(JSON.stringify(INITIAL_LOADING_DETENTION));
-    unloadingData = JSON.parse(JSON.stringify(INITIAL_UNLOADING_DETENTION));
-    normalizeDatasetTimes(loadingData);
-    normalizeDatasetTimes(unloadingData);
-    saveAllData();
-    populateTerminalDataList();
-    renderActiveTab();
-    updateStatusBar();
-    sound.alert();
+  const code = prompt("⚠️ DANGER: You are about to wipe and re-seed all detention tables!\n\nTo confirm, type 'CONFIRM RESET' below:");
+  if (code !== "CONFIRM RESET") {
+    alert("Reset cancelled. Your data was NOT modified.");
+    return;
   }
+
+  if (isServerMode) {
+    try {
+      const res = await fetch("/api/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "CONFIRM RESET" })
+      });
+      const data = await res.json();
+      alert(data.message || "Database reset completed.");
+      await loadAllData();
+      sound.alert();
+      return;
+    } catch (e) {
+      console.error("Reset API failed:", e);
+      alert("Reset API failed: " + e);
+    }
+  }
+
+  terminals = JSON.parse(JSON.stringify(INITIAL_TERMINALS));
+  loadingData = JSON.parse(JSON.stringify(INITIAL_LOADING_DETENTION));
+  unloadingData = JSON.parse(JSON.stringify(INITIAL_UNLOADING_DETENTION));
+  normalizeDatasetTimes(loadingData);
+  normalizeDatasetTimes(unloadingData);
+  saveAllData();
+  populateTerminalDataList();
+  renderActiveTab();
+  updateStatusBar();
+  sound.alert();
+}
+
+let latestLogText = "";
+
+function openLogModal() {
+  sound.click();
+  document.getElementById("log-modal").classList.add("open");
+  loadActivityLogs();
+}
+
+async function loadActivityLogs() {
+  const box = document.getElementById("log-content-box");
+  if (!box) return;
+  box.textContent = "Loading logs from server...";
+  try {
+    const res = await fetch("/api/logs");
+    if (!res.ok) throw new Error("Status " + res.status);
+    const data = await res.json();
+    if (data.entries && data.entries.length > 0) {
+      latestLogText = data.entries.join("");
+      box.textContent = latestLogText;
+      box.scrollTop = box.scrollHeight;
+    } else {
+      box.textContent = "No log entries recorded yet. Any INSERT, UPDATE, or DELETE will appear here.";
+    }
+  } catch (err) {
+    box.textContent = "⚠️ Could not load server logs (server may be offline): " + err.message;
+  }
+}
+
+function downloadActivityLog() {
+  sound.click();
+  const text = latestLogText || document.getElementById("log-content-box").textContent;
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `detention_activity_log_${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function populateTerminalDataList() {

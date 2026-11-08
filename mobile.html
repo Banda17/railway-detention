@@ -801,36 +801,84 @@
       suggestNextSNo();
     });
 
+    // Full Master Catalog of 53 Terminals from Railway PDF
+    const MASTER_53_TERMINALS = [
+      { code: 'KNGK', name: 'KAKINADA NEW GOODS COMPLEX' },
+      { code: 'TDD', name: 'TADEPALLIGUDEM' },
+      { code: 'BVM', name: 'BAYYAVARAM' },
+      { code: 'DWP', name: 'DWARAPUDI' },
+      { code: 'PGU', name: 'PADUGUPADU' },
+      { code: 'BVL', name: 'BIKKAVOLU' },
+      { code: 'OGL', name: 'ONGOLE' },
+      { code: 'SLO', name: 'SAMALKOT JN' },
+      { code: 'KCC', name: 'KRISHNA CANAL' },
+      { code: 'GDV', name: 'GUDIVADA' },
+      { code: 'RVD', name: 'RAVIKAMPADU' },
+      { code: 'EE', name: 'ELURU' },
+      { code: 'TEL', name: 'TENALI' },
+      { code: 'NDD', name: 'NIDADAVOLU' },
+      { code: 'PKO', name: 'PALAKOLLU' },
+      { code: 'AKVD', name: 'AKIVIDU' },
+      { code: 'TNKU', name: 'TANUKU' },
+      { code: 'AKP', name: 'ANAKAPALLI' },
+      { code: 'CLX', name: 'CHIRALA' },
+      { code: 'NZD', name: 'NUZVID' },
+      { code: 'REG', name: 'REGUPALEM' },
+      { code: 'MTM', name: 'MACHILIPATNAM' },
+      { code: 'BVRM', name: 'BHIMAVARAM' },
+      { code: 'NDM', name: 'NIDAMANURU' },
+      { code: 'MBL', name: 'MANUBOLU' },
+      { code: 'NGPM', name: 'NIDUGUNTAPALEM' },
+      { code: 'KVR', name: 'KOVVUR' },
+      { code: 'SDM', name: 'SURAREDDIPALEM' },
+      { code: 'BPP', name: 'BAPATLA' },
+      { code: 'AKPK', name: 'ADANI KRISHNAPATNAM PORT LTD' },
+      { code: 'KSLK', name: 'KAKINADA SEA PORT LTD' },
+      { code: 'AWCA', name: 'ANAPARTHI WHAREHOUSING CORPORATION, ANAPARTHI' },
+      { code: 'VIPN', name: 'VIMALA INFRASTRUCTURE PRIVATE LIMITED, NARASINGAPALLI' },
+      { code: 'AAFN', name: 'AKILESH AGRO FORMS LIMITED, NAVABPALEM' },
+      { code: 'BPGK', name: 'BHARAT PETROLEUM CORPORATION LIMITED, KRISHNAPATNAM' },
+      { code: 'TPAK', name: 'THERMAL POWER STATION SIDING, KONDAPALLI' },
+      { code: 'PGFC', name: 'COROMANDEL INTERNATIONAL SIDING' },
+      { code: 'NGFS', name: 'NAGARJUNA FERTILIZERS' },
+      { code: 'FCBG', name: 'FCI SIDING, NUZVID' },
+      { code: 'FCGS', name: 'FCI SIDING, KRISHNA CANAL' },
+      { code: 'FCGV', name: 'FCI SIDING, GUDIVADA' },
+      { code: 'FCIR', name: 'FCI SIDING, RAJAHMUNDRY' },
+      { code: 'FCIT', name: 'FCI SIDING, VENKATACHALAM' },
+      { code: 'FCPA', name: 'FCI SIDING PENNADA AGRAHARAM' },
+      { code: 'FCST', name: 'FCI SIDING, SAMALKOT' },
+      { code: 'BSAU', name: 'BHAVAN SAI ASSOCIATES SIDING' },
+      { code: 'MMHR', name: 'MY HOME INDUSTRIES LIMITED, REGUPALEM' },
+      { code: 'MNCK', name: 'NAGARJUNA CEMENTS SIDING, KONDAPALLI' },
+      { code: 'MRCN', name: 'RAMCO CEMENTS PRIVATE LIMITED, NARASINGAPALLI' },
+      { code: 'IOCD', name: 'IOC/BPCL LIMITED SIDING, SURAREDDIPALEM' },
+      { code: 'HPCG', name: 'HINDUSTHAN PETROLEUM CORPORATION LIMITED, GANGINENI' },
+      { code: 'TISM', name: 'TATA IRON & STEEL SIDING, GANNAVARAM' },
+      { code: 'ASLS', name: 'THE ANDHRA SUGARS LIMITED' }
+    ];
+
     // Load master stations for dropdowns
     async function loadMasterStations() {
       try {
         const res = await fetch(`${API_BASE}/api/terminals`);
         if (res.ok) {
           terminalsList = await res.json();
+          if (!terminalsList || terminalsList.length === 0) {
+            terminalsList = MASTER_53_TERMINALS;
+          }
+          localStorage.setItem('mobile_terminals_master', JSON.stringify(terminalsList));
           populateStationSelects();
+          return;
         }
       } catch (err) {
-        console.warn('Could not fetch terminals from API, using defaults', err);
-        terminalsList = [
-          { code: 'KNGK', name: 'KAKINADA NEW GOODS COMPLEX' },
-          { code: 'TDD', name: 'TADEPALLIGUDEM' },
-          { code: 'BVM', name: 'BAYYAVARAM' },
-          { code: 'DWP', name: 'DWARAPUDI' },
-          { code: 'PGU', name: 'PADUGUPADU' },
-          { code: 'BVL', name: 'BIKKAVOLU' },
-          { code: 'OGL', name: 'ONGOLE' },
-          { code: 'SLO', name: 'SAMALKOT JN' },
-          { code: 'KCC', name: 'KRISHNA CANAL' },
-          { code: 'GDV', name: 'GUDIVADA' },
-          { code: 'RVD', name: 'RAVIKAMPADU' },
-          { code: 'EE', name: 'ELURU' },
-          { code: 'TEL', name: 'TENALI' },
-          { code: 'NDD', name: 'NIDADAVOLU' },
-          { code: 'AKPK', name: 'ADANI KRISHNAPATNAM PORT LTD' },
-          { code: 'KSLK', name: 'KAKINADA SEA PORT LTD' }
-        ];
-        populateStationSelects();
+        console.warn('Could not fetch terminals from API, using master catalog', err);
       }
+
+      // Safe fallback: try localStorage mirror first, then MASTER_53_TERMINALS
+      const cached = localStorage.getItem('mobile_terminals_master');
+      terminalsList = cached ? JSON.parse(cached) : MASTER_53_TERMINALS;
+      populateStationSelects();
     }
 
     function populateStationSelects() {
