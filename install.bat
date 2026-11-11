@@ -1,24 +1,31 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Railway Terminal Detention & Sidings Management - Installer
+title Railway Terminal Detention and Sidings Management - Installer
 
 echo =====================================================================
-echo  RAILWAY TERMINAL DETENTION &amp; SIDINGS MANAGEMENT SYSTEM
-echo  WINDOWS 98 OPERATIONAL EDITION - INSTALLER &amp; DATABASE SETUP
+echo  RAILWAY TERMINAL DETENTION AND SIDINGS MANAGEMENT SYSTEM
+echo  WINDOWS 98 OPERATIONAL EDITION - INSTALLER AND DATABASE SETUP
 echo =====================================================================
 echo.
 
 cd /d "%~dp0"
 
+set "PY_CMD=python"
+if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" (
+    set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+) else if exist "%ProgramFiles%\Python312\python.exe" (
+    set "PY_CMD=%ProgramFiles%\Python312\python.exe"
+)
+
 echo [1/3] Checking Python installation...
-python --version >nul 2>&1
+"%PY_CMD%" --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Python is not found in your system PATH!
     echo Please ensure Python 3 is installed.
     pause
     exit /b 1
 )
-for /f "tokens=*" %%i in ('python --version') do set PY_VER=%%i
+for /f "tokens=*" %%i in ('"%PY_CMD%" --version') do set PY_VER=%%i
 echo [OK] Detected %PY_VER%
 echo.
 
@@ -28,7 +35,7 @@ if exist "detention.db" (
     echo      Preserving all existing records and terminals!
 ) else (
     echo      Initializing fresh database...
-    python init_db.py
+    "%PY_CMD%" init_db.py
     if errorlevel 1 (
         echo [ERROR] Failed to initialize SQLite database!
         pause

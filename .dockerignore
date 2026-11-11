@@ -10,11 +10,10 @@ __pycache__
 scratch/
 .system_generated/
 *.log
-# Exclude local database — cloud uses persistent volume
-detention.db
+# Exclude temporary SQLite lock/memory files only
 detention.db-wal
 detention.db-shm
-backups/
+# Never exclude detention.db or backups so container image always has complete baseline data
 CLOUD_RUN_GUIDE.md
 terminal_detention.zip
 

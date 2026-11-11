@@ -27,9 +27,39 @@ if sys.stderr and hasattr(sys.stderr, "reconfigure"):
 
 PORT = int(os.environ.get("PORT", 8080))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.environ.get("DB_PATH", os.path.join(BASE_DIR, "detention.db"))
-LOG_DIR = os.path.join(BASE_DIR, "logs")
+
+# Auto-detect Persistent Storage (Cloud Run Volume, Docker Mount, or Local)
+# Priority: PERSISTENT_DIR env var -> /mnt/data (standard Cloud Run volume mount) -> BASE_DIR
+default_data_dir = "/mnt/data" if os.path.exists("/mnt/data") and os.path.isdir("/mnt/data") else BASE_DIR
+DATA_DIR = os.environ.get("PERSISTENT_DIR", default_data_dir)
+os.makedirs(DATA_DIR, exist_ok=True)
+
+DB_PATH = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "detention.db"))
+LOG_DIR = os.environ.get("LOG_DIR", os.path.join(DATA_DIR, "logs"))
+BACKUP_DIR = os.environ.get("BACKUP_DIR", os.path.join(DATA_DIR, "backups"))
+
 os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(BACKUP_DIR, exist_ok=True)
+
+# If persistent directory is mounted and DB doesn't exist yet, seed it from BASE_DIR baseline
+import shutil
+if os.path.abspath(DATA_DIR) != os.path.abspath(BASE_DIR):
+    base_db = os.path.join(BASE_DIR, "detention.db")
+    if not os.path.exists(DB_PATH) and os.path.exists(base_db):
+        try:
+            shutil.copy2(base_db, DB_PATH)
+            print(f"[STORAGE] Copied baseline database from {base_db} to persistent storage {DB_PATH}")
+        except Exception as e:
+            print(f"[STORAGE WARNING] Failed copying baseline db: {e}")
+
+    for bk_name in ("loading_backup.json", "unloading_backup.json", "terminals_backup.json"):
+        src = os.path.join(BASE_DIR, "backups", bk_name)
+        dst = os.path.join(BACKUP_DIR, bk_name)
+        if os.path.exists(src) and not os.path.exists(dst):
+            try:
+                shutil.copy2(src, dst)
+            except Exception:
+                pass
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -101,33 +131,45 @@ def get_local_ip():
     return "127.0.0.1"
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("PRAGMA journal_mode = WAL;")
-    conn.execute("PRAGMA synchronous = NORMAL;")
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
+    try:
+        conn.execute("PRAGMA journal_mode = WAL;")
+    except Exception:
+        try:
+            conn.execute("PRAGMA journal_mode = DELETE;")
+        except Exception:
+            pass
+    try:
+        conn.execute("PRAGMA synchronous = NORMAL;")
+    except Exception:
+        pass
     conn.execute("PRAGMA foreign_keys = ON;")
     conn.row_factory = sqlite3.Row
     return conn
 
 def sync_backup(conn):
     try:
-        backup_dir = os.path.join(BASE_DIR, "backups")
-        os.makedirs(backup_dir, exist_ok=True)
+        os.makedirs(BACKUP_DIR, exist_ok=True)
         cursor = conn.cursor()
         
         cursor.execute("SELECT * FROM loading_detention ORDER BY CAST(s_no AS INTEGER) ASC;")
         loading_rows = [dict(r) for r in cursor.fetchall()]
-        with open(os.path.join(backup_dir, "loading_backup.json"), "w", encoding="utf-8") as f:
-            json.dump(loading_rows, f, indent=2, ensure_ascii=False)
+        # NEVER wipe existing backup if current database table is empty!
+        if len(loading_rows) > 0:
+            with open(os.path.join(BACKUP_DIR, "loading_backup.json"), "w", encoding="utf-8") as f:
+                json.dump(loading_rows, f, indent=2, ensure_ascii=False)
             
         cursor.execute("SELECT * FROM unloading_detention ORDER BY CAST(s_no AS INTEGER) ASC;")
         unloading_rows = [dict(r) for r in cursor.fetchall()]
-        with open(os.path.join(backup_dir, "unloading_backup.json"), "w", encoding="utf-8") as f:
-            json.dump(unloading_rows, f, indent=2, ensure_ascii=False)
+        if len(unloading_rows) > 0:
+            with open(os.path.join(BACKUP_DIR, "unloading_backup.json"), "w", encoding="utf-8") as f:
+                json.dump(unloading_rows, f, indent=2, ensure_ascii=False)
 
         cursor.execute("SELECT * FROM terminals ORDER BY s_no ASC;")
         terminals_rows = [dict(r) for r in cursor.fetchall()]
-        with open(os.path.join(backup_dir, "terminals_backup.json"), "w", encoding="utf-8") as f:
-            json.dump(terminals_rows, f, indent=2, ensure_ascii=False)
+        if len(terminals_rows) > 0:
+            with open(os.path.join(BACKUP_DIR, "terminals_backup.json"), "w", encoding="utf-8") as f:
+                json.dump(terminals_rows, f, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f"Warning: backup sync failed: {e}")
 
@@ -286,6 +328,25 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                 settings = {r["key"]: r["value"] for r in cursor.fetchall()}
                 self.send_json(settings)
 
+            # Full System Backup / Export
+            elif path == "/api/backup":
+                cursor.execute("SELECT * FROM terminals ORDER BY s_no ASC;")
+                term_rows = [dict(r) for r in cursor.fetchall()]
+                cursor.execute("SELECT * FROM loading_detention ORDER BY CAST(s_no AS INTEGER) ASC;")
+                load_rows = [dict(r) for r in cursor.fetchall()]
+                cursor.execute("SELECT * FROM unloading_detention ORDER BY CAST(s_no AS INTEGER) ASC;")
+                unload_rows = [dict(r) for r in cursor.fetchall()]
+                cursor.execute("SELECT key, value FROM app_settings;")
+                settings_rows = {r["key"]: r["value"] for r in cursor.fetchall()}
+                self.send_json({
+                    "version": "1.0",
+                    "exportedAt": datetime.now().isoformat(),
+                    "terminals": term_rows,
+                    "loading": load_rows,
+                    "unloading": unload_rows,
+                    "settings": settings_rows
+                })
+
             # Activity Log Viewer
             elif path == "/api/logs":
                 lines = []
@@ -293,14 +354,23 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                     try:
                         with open(ACTIVITY_LOG_FILE, "r", encoding="utf-8") as f:
                             all_lines = f.readlines()
-                            lines = all_lines[-200:] # Last 200 activity entries
+                            lines = [l for l in all_lines if l.strip()][-200:] # Last 200 activity entries
                     except Exception as e:
                         lines = [f"Error reading activity log: {e}"]
-                else:
-                    # Fallback to audit_log table
-                    cursor.execute("SELECT id, action, table_name, record_id, details, created_at FROM audit_log ORDER BY id DESC LIMIT 100;")
-                    rows = [dict(r) for r in cursor.fetchall()]
-                    lines = [f"[{r['created_at']}] [{r['action']}] [{r['table_name']}] ID={r['record_id']}: {r.get('details','')}\n" for r in rows]
+                
+                # If file log has fewer than 5 entries, enrich with SQLite audit_log table
+                if len(lines) < 5:
+                    try:
+                        cursor.execute("SELECT id, action, table_name, record_id, details, created_at FROM audit_log ORDER BY id ASC LIMIT 200;")
+                        rows = [dict(r) for r in cursor.fetchall()]
+                        if rows:
+                            db_lines = [f"[{r['created_at']}] [{r['action']:<6}] [{r['table_name']}] ID={r['record_id']}: {r.get('details','')}\n" for r in rows]
+                            existing_set = set(lines)
+                            for dbl in db_lines:
+                                if dbl not in existing_set:
+                                    lines.append(dbl)
+                    except Exception:
+                        pass
 
                 self.send_json({
                     "status": "ok",
@@ -453,6 +523,58 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                 log_activity("RESET_WIPE", "ALL_TABLES", "SYSTEM", f"Reset executed. Wiped {load_count} loading + {unload_count} unloading records.")
                 self.send_json({"success": True, "message": f"Database reset. {load_count + unload_count} records backed up to backups/ folder."})
 
+            elif path == "/api/sync-cache":
+                # Resilient Cache Sync: Allows browser or mobile client to restore records if server container restarted
+                cached_loading = body.get("loading", [])
+                cached_unloading = body.get("unloading", [])
+                restored_loading = 0
+                restored_unloading = 0
+
+                if cached_loading and isinstance(cached_loading, list):
+                    for item in cached_loading:
+                        rid = item.get("id") or f"LD-{int(datetime.now().timestamp()*1000)}"
+                        cursor.execute("""
+                        INSERT OR IGNORE INTO loading_detention (
+                            id, s_no, station, arrl_time, placement_time, release_time,
+                            out_loco_no, loco_arrl_time, crew_arrl_time, tmr_arrl_time,
+                            ready_time, dept_time, remarks
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        """, (
+                            rid, str(item.get("sNo", "")), str(item.get("station", "")).upper().strip(),
+                            item.get("arrlTime", ""), item.get("placementTime", ""), item.get("releaseTime", ""),
+                            item.get("outLocoNo", ""), item.get("locoArrlTime", ""), item.get("crewArrlTime", ""),
+                            item.get("tmrArrlTime", ""), item.get("readyTime", ""), item.get("deptTime", ""),
+                            item.get("remarks", "")
+                        ))
+                        if cursor.rowcount > 0:
+                            restored_loading += 1
+
+                if cached_unloading and isinstance(cached_unloading, list):
+                    for item in cached_unloading:
+                        rid = item.get("id") or f"UD-{int(datetime.now().timestamp()*1000)}"
+                        cursor.execute("""
+                        INSERT OR IGNORE INTO unloading_detention (
+                            id, s_no, station, arrl_time, placement_time, release_time,
+                            out_loco_no, loco_arrl_time, crew_arrl_time, tmr_arrl_time,
+                            ready_time, dept_time, remarks
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        """, (
+                            rid, str(item.get("sNo", "")), str(item.get("station", "")).upper().strip(),
+                            item.get("arrlTime", ""), item.get("placementTime", ""), item.get("releaseTime", ""),
+                            item.get("outLocoNo", ""), item.get("locoArrlTime", ""), item.get("crewArrlTime", ""),
+                            item.get("tmrArrlTime", ""), item.get("readyTime", ""), item.get("deptTime", ""),
+                            item.get("remarks", "")
+                        ))
+                        if cursor.rowcount > 0:
+                            restored_unloading += 1
+
+                if restored_loading > 0 or restored_unloading > 0:
+                    conn.commit()
+                    sync_backup(conn)
+                    log_activity("SYNC", "CACHE_RESTORE", "CLIENT", f"Restored {restored_loading} loading and {restored_unloading} unloading records from client cache.")
+
+                self.send_json({"success": True, "restoredLoading": restored_loading, "restoredUnloading": restored_unloading})
+
             else:
                 self.send_json({"error": "Unknown POST endpoint"}, 404)
 
@@ -588,12 +710,89 @@ def run_server():
     # This uses force=False so it NEVER deletes existing user data.
     # Safe to run on every startup — only creates what's missing.
     import init_db
+    init_db.DB_PATH = DB_PATH
     db_existed = os.path.exists(DB_PATH)
     init_db.initialize(force=False, seed_demo=False, empty_terminals=False)
     if not db_existed:
         print("[INIT] Created fresh database with 53 terminals.")
     else:
         print("[INIT] Existing database verified. User data preserved.")
+
+    # RESILIENT AUTO-RESTORE SAFETY CHECK:
+    # If loading or unloading table is empty (e.g. fresh container startup), auto-restore from backups!
+    conn = get_db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM loading_detention;")
+        load_count = c.fetchone()[0]
+        if load_count == 0:
+            bk_file = os.path.join(BACKUP_DIR, "loading_backup.json")
+            init_file = os.path.join(BASE_DIR, "loading_initial.json")
+            source_file = None
+            if os.path.exists(bk_file) and os.path.getsize(bk_file) > 10:
+                source_file = bk_file
+            elif os.path.exists(init_file) and os.path.getsize(init_file) > 10:
+                source_file = init_file
+            
+            if source_file:
+                print(f"[SAFETY RESTORE] loading_detention was empty. Auto-restoring from {os.path.basename(source_file)}...")
+                try:
+                    with open(source_file, "r", encoding="utf-8") as f:
+                        items = json.load(f)
+                    for idx, item in enumerate(items):
+                        rid = item.get("id") or f"LD-{idx+1:02d}"
+                        c.execute("""
+                        INSERT OR IGNORE INTO loading_detention (
+                            id, s_no, station, arrl_time, placement_time, release_time,
+                            out_loco_no, loco_arrl_time, crew_arrl_time, tmr_arrl_time,
+                            ready_time, dept_time, remarks
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        """, (
+                            rid, str(item.get("sNo", idx+1)), item.get("station", "").upper().strip(),
+                            item.get("arrlTime", ""), item.get("placementTime", ""), item.get("releaseTime", ""),
+                            item.get("outLocoNo", ""), item.get("locoArrlTime", ""), item.get("crewArrlTime", ""),
+                            item.get("tmrArrlTime", ""), item.get("readyTime", ""), item.get("deptTime", ""),
+                            item.get("remarks", "")
+                        ))
+                    conn.commit()
+                    sync_backup(conn)
+                    log_activity("RESTORE", "loading_detention", "SYSTEM", f"Auto-restored {len(items)} records from {os.path.basename(source_file)}")
+                    print(f"[SAFETY RESTORE] Successfully restored {len(items)} loading detention records.")
+                except Exception as ex:
+                    print(f"[SAFETY RESTORE WARNING] Could not auto-restore: {ex}")
+
+        # Check unloading table
+        c.execute("SELECT COUNT(*) FROM unloading_detention;")
+        unload_count = c.fetchone()[0]
+        if unload_count == 0:
+            ubk_file = os.path.join(BACKUP_DIR, "unloading_backup.json")
+            if os.path.exists(ubk_file) and os.path.getsize(ubk_file) > 10:
+                try:
+                    with open(ubk_file, "r", encoding="utf-8") as f:
+                        uitems = json.load(f)
+                    if uitems:
+                        for idx, item in enumerate(uitems):
+                            rid = item.get("id") or f"UD-{idx+1:02d}"
+                            c.execute("""
+                            INSERT OR IGNORE INTO unloading_detention (
+                                id, s_no, station, arrl_time, placement_time, release_time,
+                                out_loco_no, loco_arrl_time, crew_arrl_time, tmr_arrl_time,
+                                ready_time, dept_time, remarks
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                            """, (
+                                rid, str(item.get("sNo", idx+1)), item.get("station", "").upper().strip(),
+                                item.get("arrlTime", ""), item.get("placementTime", ""), item.get("releaseTime", ""),
+                                item.get("outLocoNo", ""), item.get("locoArrlTime", ""), item.get("crewArrlTime", ""),
+                                item.get("tmrArrlTime", ""), item.get("readyTime", ""), item.get("deptTime", ""),
+                                item.get("remarks", "")
+                            ))
+                        conn.commit()
+                        sync_backup(conn)
+                        log_activity("RESTORE", "unloading_detention", "SYSTEM", f"Auto-restored {len(uitems)} records from unloading_backup.json")
+                except Exception as ex:
+                    print(f"[SAFETY RESTORE WARNING] Could not auto-restore unloading: {ex}")
+    finally:
+        conn.close()
 
     handler = DetentionAPIHandler
     socketserver.TCPServer.allow_reuse_address = True

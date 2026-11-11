@@ -903,8 +903,37 @@
           fetch(`${API_BASE}/api/unloading`)
         ]);
 
-        if (lRes.ok) loadingRecords = await lRes.json();
-        if (uRes.ok) unloadingRecords = await uRes.json();
+        if (lRes.ok) {
+          const fetchedL = await lRes.json();
+          const cachedL = JSON.parse(localStorage.getItem('mobile_mirror_loading') || '[]');
+          if ((!fetchedL || fetchedL.length === 0) && cachedL.length > 0) {
+            console.warn('[MOBILE SAFETY] Server empty. Restoring phone mirror to server...');
+            loadingRecords = cachedL;
+            fetch(`${API_BASE}/api/sync-cache`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ loading: cachedL })
+            }).catch(() => {});
+          } else {
+            loadingRecords = fetchedL || [];
+          }
+        }
+
+        if (uRes.ok) {
+          const fetchedU = await uRes.json();
+          const cachedU = JSON.parse(localStorage.getItem('mobile_mirror_unloading') || '[]');
+          if ((!fetchedU || fetchedU.length === 0) && cachedU.length > 0) {
+            console.warn('[MOBILE SAFETY] Server empty. Restoring phone mirror to server...');
+            unloadingRecords = cachedU;
+            fetch(`${API_BASE}/api/sync-cache`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ unloading: cachedU })
+            }).catch(() => {});
+          } else {
+            unloadingRecords = fetchedU || [];
+          }
+        }
 
         // Sync any offline items to server
         await syncMobileOfflineQueue();
@@ -918,9 +947,13 @@
         document.getElementById('dbStatusText').textContent = '● SQLite Database: Connected (Ready)';
         document.getElementById('dbStatusText').style.color = '#006600';
 
-        // Save local mirror
-        localStorage.setItem('mobile_mirror_loading', JSON.stringify(loadingRecords));
-        localStorage.setItem('mobile_mirror_unloading', JSON.stringify(unloadingRecords));
+        // Save local mirror safely (never overwrite non-empty cache with empty array)
+        if (loadingRecords.length > 0) {
+          localStorage.setItem('mobile_mirror_loading', JSON.stringify(loadingRecords));
+        }
+        if (unloadingRecords.length > 0) {
+          localStorage.setItem('mobile_mirror_unloading', JSON.stringify(unloadingRecords));
+        }
 
         if (currentTab === 'view') {
           loadViewRecords();

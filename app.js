@@ -392,7 +392,27 @@ function changeSelectionColor(color, saveToServer = true) {
   } catch (e) {}
 }
 
+// Client-Side Persistent Activity Log (Mirrored in localStorage)
+function recordClientActivity(action, details) {
+  try {
+    const ts = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const line = `[${ts}] [${action.toUpperCase()}] [CLIENT] ${details}\n`;
+    const logs = JSON.parse(localStorage.getItem("win98_client_activity_log") || "[]");
+    logs.push(line);
+    if (logs.length > 250) logs.shift();
+    localStorage.setItem("win98_client_activity_log", JSON.stringify(logs));
+  } catch (e) {}
+}
+
 async function loadAllData() {
+  // Pre-load local browser mirrors
+  let cachedLoading = [];
+  let cachedUnloading = [];
+  try {
+    cachedLoading = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOADING) || "[]");
+    cachedUnloading = JSON.parse(localStorage.getItem(STORAGE_KEYS.UNLOADING) || "[]");
+  } catch (e) {}
+
   if (isServerMode) {
     try {
       const [termRes, loadRes, unloadRes, setRes] = await Promise.all([
@@ -405,6 +425,30 @@ async function loadAllData() {
       terminals = termRes || [];
       loadingData = loadRes || [];
       unloadingData = unloadRes || [];
+
+      // DATA RECOVERY GUARD:
+      // If server returned 0 records (e.g. serverless cold start / fresh container),
+      // but browser storage has records, auto-sync and restore to server!
+      let needReSync = false;
+      if (loadingData.length === 0 && cachedLoading.length > 0) {
+        console.warn(`[SAFETY] Server loading was empty. Restoring ${cachedLoading.length} records from browser cache.`);
+        loadingData = cachedLoading;
+        needReSync = true;
+      }
+      if (unloadingData.length === 0 && cachedUnloading.length > 0) {
+        console.warn(`[SAFETY] Server unloading was empty. Restoring ${cachedUnloading.length} records from browser cache.`);
+        unloadingData = cachedUnloading;
+        needReSync = true;
+      }
+
+      if (needReSync) {
+        fetch("/api/sync-cache", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ loading: loadingData, unloading: unloadingData })
+        }).catch(() => {});
+        recordClientActivity("RESTORE", `Auto-restored ${loadingData.length} loading and ${unloadingData.length} unloading records to server.`);
+      }
 
       if (setRes && setRes.theme_selected_color) {
         changeSelectionColor(setRes.theme_selected_color, false);
@@ -465,9 +509,17 @@ function normalizeDatasetTimes(dataList) {
 
 function saveAllData() {
   try {
-    localStorage.setItem(STORAGE_KEYS.TERMINALS, JSON.stringify(terminals));
-    localStorage.setItem(STORAGE_KEYS.LOADING, JSON.stringify(loadingData));
-    localStorage.setItem(STORAGE_KEYS.UNLOADING, JSON.stringify(unloadingData));
+    if (terminals && terminals.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.TERMINALS, JSON.stringify(terminals));
+    }
+    // CRITICAL FIX: Only overwrite cache if we have records, OR if user confirmed an explicit reset!
+    // Never allow an empty array to silently erase browser storage!
+    if (loadingData && (loadingData.length > 0 || window._explicitResetConfirmed)) {
+      localStorage.setItem(STORAGE_KEYS.LOADING, JSON.stringify(loadingData));
+    }
+    if (unloadingData && (unloadingData.length > 0 || window._explicitResetConfirmed)) {
+      localStorage.setItem(STORAGE_KEYS.UNLOADING, JSON.stringify(unloadingData));
+    }
   } catch (e) {
     console.error("Error saving offline mirror:", e);
   }
@@ -499,6 +551,9 @@ async function resetToDefault() {
     alert("Reset cancelled. Your data was NOT modified.");
     return;
   }
+
+  window._explicitResetConfirmed = true;
+  recordClientActivity("RESET", "User executed CONFIRM RESET.");
 
   if (isServerMode) {
     try {
@@ -541,20 +596,35 @@ function openLogModal() {
 async function loadActivityLogs() {
   const box = document.getElementById("log-content-box");
   if (!box) return;
-  box.textContent = "Loading logs from server...";
+  box.textContent = "Loading logs...";
+  
+  let serverEntries = [];
   try {
     const res = await fetch("/api/logs");
-    if (!res.ok) throw new Error("Status " + res.status);
-    const data = await res.json();
-    if (data.entries && data.entries.length > 0) {
-      latestLogText = data.entries.join("");
-      box.textContent = latestLogText;
-      box.scrollTop = box.scrollHeight;
-    } else {
-      box.textContent = "No log entries recorded yet. Any INSERT, UPDATE, or DELETE will appear here.";
+    if (res.ok) {
+      const data = await res.json();
+      serverEntries = data.entries || [];
     }
   } catch (err) {
-    box.textContent = "⚠️ Could not load server logs (server may be offline): " + err.message;
+    console.warn("Could not load server logs:", err);
+  }
+
+  const clientLogs = JSON.parse(localStorage.getItem("win98_client_activity_log") || "[]");
+
+  // Merge server and client logs ensuring no duplicates
+  let combined = [...serverEntries];
+  for (const cl of clientLogs) {
+    if (!combined.some(s => s.trim() === cl.trim())) {
+      combined.push(cl);
+    }
+  }
+
+  if (combined.length > 0) {
+    latestLogText = combined.join("");
+    box.textContent = latestLogText;
+    box.scrollTop = box.scrollHeight;
+  } else {
+    box.textContent = "No log entries recorded yet. Any INSERT, UPDATE, or DELETE will appear here.";
   }
 }
 
@@ -566,6 +636,43 @@ function downloadActivityLog() {
   const a = document.createElement("a");
   a.href = url;
   a.download = `detention_activity_log_${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// 1-Click Full System Backup Export (JSON)
+async function downloadDatabaseJSONBackup() {
+  sound.click();
+  try {
+    let backupData = null;
+    if (isServerMode) {
+      const res = await fetch("/api/backup");
+      if (res.ok) backupData = await res.json();
+    }
+    if (!backupData) {
+      backupData = {
+        version: "1.0",
+        exportedAt: new Date().toISOString(),
+        terminals,
+        loading: loadingData,
+        unloading: unloadingData
+      };
+    }
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `railway_detention_FULL_BACKUP_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("Could not export backup: " + e.message);
+  }
+}
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1190,6 +1297,7 @@ async function saveDetentionForm(event) {
       if (!res.ok) {
         throw new Error(`Server returned status ${res.status}`);
       }
+      recordClientActivity(editingId ? "UPDATE" : "INSERT", `${activeTab.toUpperCase()} S.No ${payload.sNo} (${payload.station}) Loco=${payload.outLocoNo}`);
       await loadAllData();
     } catch (err) {
       console.warn("Backend save failed, storing in offline queue:", err);
@@ -1263,6 +1371,7 @@ async function executeDelete() {
     else if (activeTab === "loading") endpoint = `/api/loading/${pendingDeleteId}`;
     else if (activeTab === "unloading") endpoint = `/api/unloading/${pendingDeleteId}`;
 
+    recordClientActivity("DELETE", `Deleted ${activeTab.toUpperCase()} record ID=${pendingDeleteId}`);
     await fetch(endpoint, { method: "DELETE" }).catch(() => {});
     if (selectedId === pendingDeleteId) selectedId = null;
     pendingDeleteId = null;

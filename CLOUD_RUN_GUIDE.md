@@ -1,10 +1,27 @@
-# 🚀 Google Cloud Run Deployment Guide
+# 🚀 Google Cloud Run Deployment & Persistence Guide
 
-This guide explains how to deploy the **Railway Terminal Detention Management System** to **Google Cloud Run** with public HTTPS access for both PC and Mobile.
+This guide explains how to deploy the **Railway Terminal Detention Management System** to **Google Cloud Run** with public HTTPS access for PC and Mobile, with **Zero Data Loss & Full Persistence**.
 
 ---
 
-## ⚡ Option 1: Deploy in 2 Minutes via Cloud Shell (Easiest & Free)
+## ⚠️ Why Did Data & Logs Reset Previously?
+
+By default, Cloud Run is a **stateless, serverless environment**:
+1. When traffic is idle for 15 minutes, Cloud Run automatically shuts down (scales down to 0).
+2. When a new request arrives, a fresh container is booted.
+3. If files are stored in the temporary container root (`/app/`), they are destroyed upon container recycle.
+4. Furthermore, if `.dockerignore` excluded `detention.db`, the container booted completely empty!
+
+### ✅ What We Fixed to Guarantee Zero Data Loss:
+1. **Baked-in Master Baseline**: `detention.db` (53 terminals + master records) is now packaged inside the image, so a container never starts blank.
+2. **Persistent Cloud Storage Volume**: Container data (`detention.db`, `logs/`, `backups/`) is mounted to a Google Cloud Storage bucket at `/mnt/data`.
+3. **Always-On Instance (`--min-instances 1`)**: Cloud Run keeps at least 1 container warm 24/7 so it never sleeps or recycles unexpectedly.
+4. **Client-Side Data Recovery Guard**: If the server ever reboots empty, your browser & phone caches automatically push your records back to the server.
+5. **Persistent Activity Logging**: System activity is stored both on persistent disk and in local browser storage, and combined in real time.
+
+---
+
+## ⚡ Option 1: Deploy in 2 Minutes via Google Cloud Shell (Recommended)
 
 You do **not** need Docker or `gcloud` installed on your PC. You can deploy directly from your web browser using Google Cloud Shell.
 
@@ -14,66 +31,36 @@ You do **not** need Docker or `gcloud` installed on your PC. You can deploy dire
 
 2. **Upload Project Folder**:
    - In Cloud Shell, click the three dots (`⋮`) menu in the upper-right corner and choose **Upload**.
-   - Upload your `terminal detention` folder (or zip it first as `terminal_detention.zip` and run `unzip terminal_detention.zip`).
+   - Upload your `railway-detention` folder (or zip it first as `railway-detention.zip` and run `unzip railway-detention.zip`).
 
-3. **Deploy with One Command**:
+3. **Deploy with One Command (Persistent & Always-On)**:
    ```bash
-   cd "terminal detention"
+   cd railway-detention
    bash deploy_cloudrun.sh
    ```
-   *(Or run directly:)*
-   ```bash
-   gcloud run deploy railway-detention \
-     --source . \
-     --region us-central1 \
-     --allow-unauthenticated \
-     --port 8080
-   ```
+   *The script automatically creates your persistent storage bucket, mounts it to `/mnt/data`, configures `--min-instances 1`, and deploys.*
 
 4. **Done!**
-   Google Cloud will automatically build your container and give you a secure public URL like:
+   Google Cloud will output your secure public URL:
    - 🖥️ **Desktop App**: `https://railway-detention-xxxx-uc.a.run.app/`
    - 📱 **Mobile Phone**: `https://railway-detention-xxxx-uc.a.run.app/mobile.html`
+   - 📋 **Activity Log**: `https://railway-detention-xxxx-uc.a.run.app/api/logs`
 
 ---
 
-## 🌐 Option 2: Deploy from Google Cloud Console Web UI
-
-1. Open [Google Cloud Console - Cloud Run](https://console.cloud.google.com/run).
-2. Click **Create Service**.
-3. Under **Deployment**, choose **"Continuously deploy from a repository"** (or upload to Artifact Registry).
-4. Service name: `railway-detention`.
-5. Region: choose your preferred region (e.g., `asia-south1` Mumbai or `us-central1`).
-6. Authentication: Choose **"Allow unauthenticated invocations"** (so anyone with the link or your team can access it).
-7. Under **Container > Port**: set to `8080`.
-8. Click **Create**.
-
----
-
-## 💻 Option 3: Deploy using Local `gcloud` CLI (Windows)
+## 💻 Option 2: Deploy from Windows PC (`deploy_cloudrun.bat`)
 
 If you have Google Cloud SDK installed on your Windows PC:
-1. Open PowerShell or Command Prompt.
-2. Navigate to your project folder:
-   ```cmd
-   cd "C:\Users\RAMSAKETH\Documents\terminal detention"
-   ```
-3. Run the deployment script:
-   ```cmd
-   deploy_cloudrun.bat
-   ```
-   Or:
-   ```cmd
-   gcloud run deploy railway-detention --source . --region us-central1 --allow-unauthenticated
-   ```
+1. Double-click `deploy_cloudrun.bat`.
+2. Follow the prompt to deploy with persistent Cloud Storage mounted to `/mnt/data`.
 
 ---
 
-## 💾 Notes on Database Persistence on Cloud Run
+## 🖥️ Running Locally on PC (Offline Mode)
 
-- Cloud Run containers are serverless. Out of the box, the pre-baked SQLite database (`detention.db` with all 53 terminals and detention records) is loaded into the container.
-- If you want edits and new entries to persist indefinitely across container restarts, Cloud Run allows mounting a **Cloud Storage Bucket**:
-  - In Cloud Run service settings -> **Volumes** -> Add Volume -> **Cloud Storage Bucket**.
-  - Mount path: `/mnt/data`
-  - Environment variable: `DB_PATH=/mnt/data/detention.db`
+If you prefer to run locally on your own Windows computer:
+1. Python 3.12 is now installed on your system.
+2. Simply double-click **`start.bat`**.
+3. It starts the server on port 8080 and opens `http://localhost:8080` in your browser.
+4. All data, backups, and logs are saved directly in your folder.
 

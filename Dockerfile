@@ -10,12 +10,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR $APP_HOME
 
-# Copy ONLY application code (no database, no backups)
+# Copy application code and baseline database
 COPY . ./
 
-# Do NOT run init_db.py at build time!
-# The server auto-initializes the DB at startup on the persistent volume.
-# This ensures redeployments never wipe user data.
+# Ensure data directories exist
+RUN mkdir -p /app/logs /app/backups
 
 # Cloud Run defaults to port 8080
 EXPOSE 8080

@@ -1,0 +1,10 @@
+logs/
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+detention.db-wal
+detention.db-shm
+.gemini/
+scratch/
+.system_generated/

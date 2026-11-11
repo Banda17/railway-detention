@@ -34,9 +34,19 @@ if "%SERVICE_NAME%"=="" set SERVICE_NAME=railway-detention
 set /p REGION="Enter GCP Region [default: us-central1]: "
 if "%REGION%"=="" set REGION=us-central1
 
+for /f "tokens=*" %%i in ('call gcloud config get-value project 2^>nul') do set GCP_PROJECT=%%i
+if "%GCP_PROJECT%"=="" set GCP_PROJECT=railway-data
+set BUCKET_NAME=%GCP_PROJECT%-detention-storage
+
+echo.
+echo Checking/Creating Persistent Cloud Storage Bucket: gs://%BUCKET_NAME%...
+call gsutil mb -l %REGION% gs://%BUCKET_NAME% 2>nul
+
 echo.
 echo Deploying %SERVICE_NAME% to Google Cloud Run in %REGION%...
-echo (Google Cloud Build will package and deploy your container)
+echo - Persistent Storage: Mounted to /mnt/data
+echo - Min Instances     : 1 (Always-on, prevents cold-start wipes)
+echo - Code & DB Baseline: Packaged together
 echo.
 
 call gcloud run deploy %SERVICE_NAME% ^
@@ -44,7 +54,13 @@ call gcloud run deploy %SERVICE_NAME% ^
     --region %REGION% ^
     --platform managed ^
     --allow-unauthenticated ^
-    --port 8080
+    --port 8080 ^
+    --memory 512Mi ^
+    --execution-environment gen2 ^
+    --min-instances 1 ^
+    --set-env-vars "PERSISTENT_DIR=/mnt/data,DB_PATH=/mnt/data/detention.db,LOG_DIR=/mnt/data/logs,BACKUP_DIR=/mnt/data/backups" ^
+    --add-volume name=data-vol,type=cloud-storage,bucket=%BUCKET_NAME% ^
+    --add-volume-mount volume=data-vol,mount-path=/mnt/data
 
 echo.
 echo =====================================================================
