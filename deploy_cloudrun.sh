@@ -21,7 +21,7 @@ if ! gsutil ls -b "gs://${BUCKET_NAME}" >/dev/null 2>&1; then
   gsutil mb -l "${REGION}" "gs://${BUCKET_NAME}" || true
 fi
 
-# Deploy with persistent volume attached to /mnt/data and min-instances=1
+# Deploy with persistent volume attached to /mnt/data and min/max instances = 1 (single unified container)
 gcloud run deploy "${SERVICE_NAME}" \
   --source . \
   --region "${REGION}" \
@@ -31,6 +31,8 @@ gcloud run deploy "${SERVICE_NAME}" \
   --memory 512Mi \
   --execution-environment gen2 \
   --min-instances 1 \
+  --max-instances 1 \
+  --concurrency 80 \
   --set-env-vars "PERSISTENT_DIR=/mnt/data,DB_PATH=/mnt/data/detention.db,LOG_DIR=/mnt/data/logs,BACKUP_DIR=/mnt/data/backups" \
   --add-volume name=data-vol,type=cloud-storage,bucket="${BUCKET_NAME}" \
   --add-volume-mount volume=data-vol,mount-path=/mnt/data

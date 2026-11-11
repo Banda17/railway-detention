@@ -799,7 +799,39 @@
       await loadMasterStations();
       await refreshRecords();
       suggestNextSNo();
+      startMobileLiveSync();
     });
+
+    // Real-Time Cross-Device Sync (Instant sync with Desktop)
+    let currentMobileVersion = null;
+    let isMobileSyncing = false;
+
+    async function checkMobileSync() {
+      if (isMobileSyncing) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/sync-status`);
+        if (!res.ok) return;
+        const info = await res.json();
+        if (currentMobileVersion === null) {
+          currentMobileVersion = info.version;
+          return;
+        }
+        if (info.version !== currentMobileVersion) {
+          currentMobileVersion = info.version;
+          isMobileSyncing = true;
+          await refreshRecords();
+          isMobileSyncing = false;
+        }
+      } catch (e) {}
+    }
+
+    function startMobileLiveSync() {
+      setInterval(checkMobileSync, 3500);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) checkMobileSync();
+      });
+      window.addEventListener('focus', () => checkMobileSync());
+    }
 
     // Full Master Catalog of 53 Terminals from Railway PDF
     const MASTER_53_TERMINALS = [

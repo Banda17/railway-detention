@@ -58,6 +58,8 @@ call gcloud run deploy %SERVICE_NAME% ^
     --memory 512Mi ^
     --execution-environment gen2 ^
     --min-instances 1 ^
+    --max-instances 1 ^
+    --concurrency 80 ^
     --set-env-vars "PERSISTENT_DIR=/mnt/data,DB_PATH=/mnt/data/detention.db,LOG_DIR=/mnt/data/logs,BACKUP_DIR=/mnt/data/backups" ^
     --add-volume name=data-vol,type=cloud-storage,bucket=%BUCKET_NAME% ^
     --add-volume-mount volume=data-vol,mount-path=/mnt/data

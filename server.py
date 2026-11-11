@@ -82,6 +82,12 @@ logger.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
+DATA_VERSION = int(datetime.now().timestamp() * 1000)
+
+def bump_data_version():
+    global DATA_VERSION
+    DATA_VERSION = int(datetime.now().timestamp() * 1000)
+
 ACTIVITY_LOG_FILE = os.path.join(LOG_DIR, "activity_log.txt")
 
 def log_activity(action, table_name, record_id, details="", payload=None):
@@ -170,6 +176,9 @@ def sync_backup(conn):
         if len(terminals_rows) > 0:
             with open(os.path.join(BACKUP_DIR, "terminals_backup.json"), "w", encoding="utf-8") as f:
                 json.dump(terminals_rows, f, indent=2, ensure_ascii=False)
+        
+        # Increment sync version so mobile and desktop clients detect changes immediately
+        bump_data_version()
     except Exception as e:
         print(f"Warning: backup sync failed: {e}")
 
@@ -267,6 +276,13 @@ class DetentionAPIHandler(http.server.SimpleHTTPRequestHandler):
                     "localIp": ip,
                     "desktopUrl": f"{base_url}/" if is_cloud else f"http://localhost:{PORT}",
                     "mobileUrl": f"{base_url}/mobile.html" if is_cloud else f"http://{ip}:{PORT}/mobile.html"
+                })
+
+            # Real-time Cross-Device Sync Status Check (Mobile & Desktop)
+            elif path == "/api/sync-status":
+                self.send_json({
+                    "version": DATA_VERSION,
+                    "serverTime": datetime.now().isoformat()
                 })
 
             # Stats & Info

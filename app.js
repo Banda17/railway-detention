@@ -366,6 +366,115 @@ function initApp() {
   setupEventListeners();
   loadAllData();
   startClock();
+  startLiveSync();
+}
+
+// -------------------------------------------------------------
+// Real-time Live Synchronization with Mobile Phone & Cloud
+// -------------------------------------------------------------
+let currentDataVersion = null;
+let isSyncing = false;
+let syncIntervalTimer = null;
+
+function updateSyncStatusUI(status) {
+  const dot = document.getElementById("sync-indicator-dot");
+  const text = document.getElementById("sync-status-text");
+  if (!dot) return;
+  if (status === "synced") {
+    dot.style.color = "#059669";
+    dot.title = "Live Synced: In sync with mobile and cloud";
+    if (text) text.textContent = "Live Synced";
+  } else if (status === "syncing") {
+    dot.style.color = "#2563eb";
+    dot.title = "Syncing changes with mobile/cloud...";
+    if (text) text.textContent = "Syncing...";
+  } else if (status === "offline") {
+    dot.style.color = "#dc2626";
+    dot.title = "Offline: Changes saved in local storage";
+    if (text) text.textContent = "Offline";
+  }
+}
+
+async function checkServerSync(silent = true) {
+  if (!isServerMode || isSyncing) return;
+  try {
+    const res = await fetch("/api/sync-status");
+    if (!res.ok) return;
+    const info = await res.json();
+    if (currentDataVersion === null) {
+      currentDataVersion = info.version;
+      updateSyncStatusUI("synced");
+      return;
+    }
+    if (info.version !== currentDataVersion) {
+      currentDataVersion = info.version;
+      updateSyncStatusUI("syncing");
+      await silentReloadData();
+      updateSyncStatusUI("synced");
+    } else {
+      updateSyncStatusUI("synced");
+    }
+  } catch (e) {
+    updateSyncStatusUI("offline");
+  }
+}
+
+async function silentReloadData() {
+  if (isSyncing) return;
+  isSyncing = true;
+  try {
+    const [loadRes, unloadRes, termRes] = await Promise.all([
+      fetch("/api/loading").then(r => r.json()),
+      fetch("/api/unloading").then(r => r.json()),
+      fetch("/api/terminals").then(r => r.json()).catch(() => null)
+    ]);
+
+    if (loadRes && Array.isArray(loadRes)) loadingData = loadRes;
+    if (unloadRes && Array.isArray(unloadRes)) unloadingData = unloadRes;
+    if (termRes && Array.isArray(termRes)) terminals = termRes;
+
+    saveAllData();
+
+    // Only update view if user is not actively typing in modal
+    const openModals = document.querySelectorAll(".modal-overlay.open");
+    const activeModal = Array.from(openModals).find(m => m.id === "detention-form-modal" || m.id === "terminal-modal");
+    if (!activeModal) {
+      renderActiveTab();
+      updateStatusBar();
+    }
+  } catch (err) {
+    console.warn("Silent sync reload failed:", err);
+  } finally {
+    isSyncing = false;
+  }
+}
+
+async function forceManualSync() {
+  sound.click();
+  updateSyncStatusUI("syncing");
+  try {
+    await loadAllData();
+    const res = await fetch("/api/sync-status");
+    if (res.ok) {
+      const info = await res.json();
+      currentDataVersion = info.version;
+    }
+    updateSyncStatusUI("synced");
+  } catch (e) {
+    updateSyncStatusUI("offline");
+  }
+}
+
+function startLiveSync() {
+  if (syncIntervalTimer) clearInterval(syncIntervalTimer);
+  // Real-time polling every 3.5 seconds
+  syncIntervalTimer = setInterval(() => checkServerSync(true), 3500);
+
+  // Instant sync when tab gains focus
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) checkServerSync(true);
+  });
+  window.addEventListener("focus", () => checkServerSync(true));
 }
 
 function loadSelectionColor() {
